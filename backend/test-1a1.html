@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Uji Coba CRUD 1.A.1 - STIKOM PGRI BWI</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f6; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { border: 1px solid #ddd; padding: 15px; margin-bottom: 20px; border-radius: 5px; background: #fafafa; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+        th { background: #eee; }
+        .row-kuning { background: #ffff00; }
+        input, textarea { width: 100%; padding: 8px; margin: 5px 0; box-sizing: border-box; }
+        button { cursor: pointer; padding: 10px 15px; border: none; border-radius: 4px; background: #007bff; color: white; }
+        button:hover { opacity: 0.8; }
+        .btn-delete { background: #dc3545; }
+        .btn-edit { background: #17a2b8; }
+        .btn-export { background: #ffc107; color: black; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Uji Coba Tabel 1.A.1 (Pimpinan)</h1>
+
+    <!-- 1. AUTH SECTION -->
+    <div class="section">
+        <h3>1. Login (Dapatkan Token JWT)</h3>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="username" placeholder="Username">
+            <input type="password" id="password" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+        <p>Status: <b id="token-status">Belum Login</b></p>
+    </div>
+
+    <!-- 2. FORM INPUT (id_jafung DIHAPUS) -->
+    <div class="section">
+        <h3>2. Input/Update Data Pimpinan</h3>
+        <input type="hidden" id="id_pimpinan">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>ID Pegawai (Master):</label>
+                <input type="number" id="id_pegawai" placeholder="Contoh: 1">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex:1">
+                    <label>Tahun Mulai:</label>
+                    <input type="number" id="periode_mulai" placeholder="YYYY">
+                </div>
+                <div style="flex:1">
+                    <label>Tahun Selesai:</label>
+                    <input type="number" id="periode_selesai" placeholder="YYYY">
+                </div>
+            </div>
+        </div>
+        <label>Tupoksi:</label>
+        <textarea id="tupoksi" placeholder="Tugas Pokok dan Fungsi" rows="3"></textarea>
+        <div style="margin-top: 10px;">
+            <button onclick="saveData()" id="btn-save" style="background: #28a745;">💾 Simpan Data</button>
+            <button onclick="resetForm()" style="background: #6c757d;">🔄 Reset</button>
+        </div>
+        <p><small>*SKS Jabatan & Jabatan Akademik akan terdeteksi otomatis oleh sistem.</small></p>
+    </div>
+
+    <!-- 3. DASHBOARD -->
+    <div class="section">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h3>3. Data Pimpinan (Dashboard)</h3>
+            <div>
+                <button onclick="fetchData()">🔄 Refresh Data</button>
+                <button onclick="exportExcel()" class="btn-export">📥 Export Excel</button>
+            </div>
+        </div>
+        <table id="table-pimpinan">
+            <thead>
+                <tr>
+                    <th>Unit</th>
+                    <th>Nama Pimpinan</th>
+                    <th>Jafung (Auto)</th>
+                    <th>Periode</th>
+                    <th>SKS</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="6">Belum ada data...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const BASE_URL = 'http://localhost:5000/api';
+    let token = localStorage.getItem('token') || '';
+
+    async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        const res = await fetch(`${BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            token = result.token;
+            localStorage.setItem('token', token);
+            document.getElementById('token-status').innerText = 'Login Berhasil!';
+            alert('Login Berhasil!');
+            fetchData();
+        } else {
+            alert(result.message);
+        }
+    }
+
+    async function fetchData() {
+        if (!token) return alert("Login dulu Bos!");
+        
+        const res = await fetch(`${BASE_URL}/upps/1a1-pimpinan`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+
+        const tbody = document.querySelector('#table-pimpinan tbody');
+        tbody.innerHTML = '';
+
+        if (result.success && result.data.length > 0) {
+            result.data.forEach(item => {
+                tbody.innerHTML += `
+                    <tr class="row-kuning">
+                        <td>${item.nama_unit_display}</td>
+                        <td><b>${item.nama_lengkap}</b></td>
+                        <td><i>${item.nama_jafung}</i></td>
+                        <td>${item.periode_mulai} - ${item.periode_selesai}</td>
+                        <td>${item.sks_jabatan}</td>
+                        <td>
+                            <button class="btn-edit" onclick='isiEdit(${JSON.stringify(item)})'>Edit</button>
+                            <button class="btn-delete" onclick="deleteData('${item.id_pimpinan}')">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        } else {
+            tbody.innerHTML = '<tr><td colspan="6">Data Kosong.</td></tr>';
+        }
+    }
+
+    async function saveData() {
+        const id = document.getElementById('id_pimpinan').value;
+        // Kita tidak lagi mengirim id_jafung
+        const bodyData = {
+            id_pegawai: document.getElementById('id_pegawai').value,
+            periode_mulai: document.getElementById('periode_mulai').value,
+            periode_selesai: document.getElementById('periode_selesai').value,
+            tupoksi: document.getElementById('tupoksi').value,
+        };
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${BASE_URL}/upps/1a1-pimpinan/${id}` : `${BASE_URL}/upps/1a1-pimpinan`;
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(bodyData)
+        });
+
+        const result = await res.json();
+        alert(result.message);
+        fetchData();
+        resetForm();
+    }
+
+    async function deleteData(id) {
+        if (confirm('Yakin pindahkan ke sampah?')) {
+            await fetch(`${BASE_URL}/upps/1a1-pimpinan/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            fetchData();
+        }
+    }
+
+    function isiEdit(item) {
+        document.getElementById('id_pimpinan').value = item.id_pimpinan;
+        document.getElementById('id_pegawai').value = item.id_pegawai || ''; // Pastikan id_pegawai ada di response
+        document.getElementById('periode_mulai').value = item.periode_mulai;
+        document.getElementById('periode_selesai').value = item.periode_selesai;
+        document.getElementById('tupoksi').value = item.tupoksi;
+        document.getElementById('btn-save').innerText = "🆙 Update Data";
+    }
+
+    function resetForm() {
+        document.getElementById('id_pimpinan').value = '';
+        document.getElementById('id_pegawai').value = '';
+        document.getElementById('periode_mulai').value = '';
+        document.getElementById('periode_selesai').value = '';
+        document.getElementById('tupoksi').value = '';
+        document.getElementById('btn-save').innerText = "💾 Simpan Data";
+    }
+
+    function exportExcel() {
+        if (!token) return alert("Login dulu!");
+        window.open(`${BASE_URL}/upps/1a1-pimpinan/export?token=${token}`);
+    }
+</script>
+</body>
+</html>

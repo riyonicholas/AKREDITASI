@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-Akreditasi Master - Bentuk Pembelajaran</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        table { border-collapse: collapse; width: 100%; font-size: 0.75rem; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px; text-align: left; }
+        th { background-color: #f8fafc; text-transform: uppercase; font-weight: 800; color: #64748b; }
+        .input-group-label { font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-96 border-t-8 border-indigo-600">
+            <div class="flex justify-center mb-6">
+                <div class="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black shadow-lg">ST</div>
+            </div>
+            <h1 class="text-xl font-black text-center mb-8 text-slate-800 uppercase tracking-tighter">Master Management</h1>
+            <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
+                <input type="text" id="username" required placeholder="Username" class="w-full p-3 border rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" id="password" required placeholder="Password" class="w-full p-3 border rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg hover:bg-indigo-700 transition uppercase text-xs tracking-widest">Login Admin</button>
+            </form>
+            <div id="login-error" class="hidden mt-4 p-3 bg-red-50 text-red-600 text-[10px] text-center rounded-lg font-bold uppercase"></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden p-8">
+        <div class="max-w-6xl mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
+            
+            <div class="flex justify-between items-center mb-10 border-b pb-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg">ST</div>
+                    <div>
+                        <h1 class="text-lg font-black text-slate-800 uppercase">Master Bentuk Pembelajaran</h1>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Authorized: <span id="user-info" class="text-indigo-600"></span></p>
+                    </div>
+                </div>
+                <button onclick="location.reload()" class="text-[10px] font-black text-red-500 uppercase tracking-widest hover:underline">Logout</button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-10">
+                <!-- Form Panel -->
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <h2 class="text-[10px] font-black mb-6 text-slate-400 uppercase tracking-widest">Input Master</h2>
+                        <form id="form-master" class="space-y-4">
+                            <input type="hidden" id="edit-id">
+                            <div>
+                                <label class="input-group-label">Nama Bentuk</label>
+                                <input type="text" id="nama_bentuk" class="w-full p-3 border rounded-xl text-xs font-bold shadow-sm outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="input-group-label">Keterangan</label>
+                                <textarea id="keterangan" rows="3" class="w-full p-3 border rounded-xl text-xs font-bold shadow-sm outline-none focus:border-indigo-500"></textarea>
+                            </div>
+                            <button type="button" onclick="saveData()" id="btn-save" class="w-full bg-slate-900 text-white py-4 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg hover:bg-indigo-600 transition">Simpan Data</button>
+                            <button type="button" onclick="resetForm()" id="btn-cancel" class="hidden w-full text-slate-400 font-bold text-[10px] uppercase">Batal</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Table Panel -->
+                <div class="lg:col-span-3">
+                    <table class="w-full rounded-xl overflow-hidden shadow-sm">
+                        <thead>
+                            <tr>
+                                <th class="w-16">ID</th>
+                                <th>Nama Bentuk Pembelajaran</th>
+                                <th>Keterangan</th>
+                                <th class="w-32 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/api";
+        let session = { token: null, username: null };
+
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    session = { token: result.token, username: result.user.username };
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    document.getElementById('user-info').innerText = session.username;
+                    loadData();
+                } else {
+                    document.getElementById('login-error').innerText = result.message;
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            } catch (err) { alert("Server Error"); }
+        }
+
+        async function loadData() {
+            const res = await fetch(`${API_BASE}/master/bentuk-pembelajaran`, {
+                headers: { 'Authorization': `Bearer ${session.token}` }
+            });
+            const result = await res.json();
+            const tbody = document.getElementById('master-tbody');
+            
+            if (result.success && Array.isArray(result.data)) {
+                tbody.innerHTML = result.data.map(r => `
+                    <tr class="hover:bg-slate-50 border-b border-slate-100 transition">
+                        <td class="font-bold text-slate-400">${r.id_bentuk}</td>
+                        <td class="font-black text-slate-700 uppercase tracking-tight">${r.nama_bentuk}</td>
+                        <td class="text-[10px] text-slate-500 font-medium">${r.keterangan || '-'}</td>
+                        <td class="flex gap-2 justify-center">
+                            <button onclick="editData(${JSON.stringify(r).replace(/"/g, '&quot;')})" class="text-[8px] font-black text-indigo-600 hover:underline uppercase">Edit</button>
+                            <button onclick="deleteData(${r.id_bentuk})" class="text-[8px] font-black text-red-500 hover:underline uppercase">Hapus</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10 text-red-500 font-bold uppercase text-[10px]">Gagal memuat data: ${result.message}</td></tr>`;
+            }
+        }
+
+        async function saveData() {
+            const id = document.getElementById('edit-id').value;
+            const nama_bentuk = document.getElementById('nama_bentuk').value;
+            const keterangan = document.getElementById('keterangan').value;
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_BASE}/master/bentuk-pembelajaran/${id}` : `${API_BASE}/master/bentuk-pembelajaran`;
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                body: JSON.stringify({ nama_bentuk, keterangan })
+            });
+            const result = await res.json();
+            if(result.success) {
+                resetForm();
+                loadData();
+            }
+        }
+
+        function editData(r) {
+            document.getElementById('edit-id').value = r.id_bentuk;
+            document.getElementById('nama_bentuk').value = r.nama_bentuk;
+            document.getElementById('keterangan').value = r.keterangan;
+            document.getElementById('btn-save').innerText = "Update Data";
+            document.getElementById('btn-cancel').classList.remove('hidden');
+        }
+
+        function resetForm() {
+            document.getElementById('form-master').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('btn-save').innerText = "Simpan Data";
+            document.getElementById('btn-cancel').classList.add('hidden');
+        }
+
+        async function deleteData(id) {
+            if(confirm("Hapus master ini?")) {
+                await fetch(`${API_BASE}/master/bentuk-pembelajaran/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                loadData();
+            }
+        }
+    </script>
+</body>
+</html>

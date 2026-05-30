@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Akreditasi 2.A.1 - Manajemen Data</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        table { border-collapse: collapse; width: 100%; font-size: 0.65rem; }
+        th, td { border: 1px solid #000; padding: 6px; text-align: center; }
+        th { background-color: #f3f4f6; }
+        .bg-lkps-header { background-color: #d1d5db; }
+        .bg-lkps-summary { background-color: #fef08a; }
+        input:disabled, select:disabled { background-color: #f9fafb; cursor: not-allowed; color: #d1d5db; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tab-active { border-bottom: 4px solid #2563eb; color: #2563eb; font-weight: 800; }
+        td[title]:hover { background-color: #f0f9ff; cursor: help; }
+        .input-group-label { font-size: 0.6rem; font-weight: 800; color: #64748b; letter-spacing: 0.05em; margin-bottom: 4px; text-transform: uppercase; }
+        .form-section { background: rgba(255,255,255,0.5); border-radius: 12px; padding: 12px; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        .editing-mode { border: 2px solid #3b82f6; box-shadow: 0 0 15px rgba(59, 130, 246, 0.3); }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans">
+
+    <!-- Screen 1: Login -->
+    <div id="login-screen" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-96 border-t-8 border-blue-600">
+            <div class="flex justify-center mb-6">
+                <div class="w-20 h-20 bg-blue-600 rounded-3xl flex items-center justify-center text-white text-3xl font-black shadow-xl">ST</div>
+            </div>
+            <h1 class="text-2xl font-bold text-center mb-1 text-slate-800">SI-Akreditasi</h1>
+            <p class="text-[10px] text-slate-400 text-center mb-8 uppercase font-bold tracking-[0.2em]">Management System 2.1</p>
+            <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Username</label>
+                    <input type="text" id="username" required placeholder="pmb / ala" class="w-full p-3 border rounded-xl bg-slate-50 font-semibold focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-400 uppercase mb-1 ml-1">Password</label>
+                    <input type="password" id="password" required placeholder="********" class="w-full p-3 border rounded-xl bg-slate-50 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 rounded-xl shadow-lg active:scale-95 transition mt-4 uppercase text-xs tracking-widest">Masuk Ke Sistem</button>
+            </form>
+            <div id="login-error" class="hidden mt-6 p-3 bg-red-50 text-red-600 text-[10px] text-center rounded-xl font-bold uppercase border border-red-100"></div>
+        </div>
+    </div>
+
+    <!-- Screen 2: Main Dashboard -->
+    <div id="main-content" class="hidden p-6">
+        <div class="max-w-[98%] mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
+            
+            <!-- Header Navigation -->
+            <div class="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
+                <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-200">ST</div>
+                    <div>
+                        <h1 class="text-xl font-black text-slate-800 tracking-tight uppercase">Manajemen Tabel 2.A.1</h1>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">
+                            Akun: <span id="user-info" class="text-blue-600 lowercase"></span> | 
+                            Unit Kerja: <span id="display-role" class="text-slate-800 bg-slate-100 px-2 py-0.5 rounded ml-1"></span>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <nav class="flex gap-4">
+                        <button onclick="switchTab('main')" id="tab-main" class="px-2 py-3 text-xs font-black tracking-widest transition tab-active uppercase">Dashboard</button>
+                        <button onclick="switchTab('trash')" id="tab-trash" class="px-2 py-3 text-xs font-black tracking-widest text-slate-300 hover:text-red-500 transition relative uppercase">
+                            Trash 
+                            <span id="trash-count" class="ml-1 bg-red-500 text-white px-1.5 rounded-full text-[8px]">0</span>
+                        </button>
+                    </nav>
+                    <button onclick="handleLogout()" class="bg-red-50 text-red-600 px-6 py-2.5 rounded-xl text-[10px] font-black tracking-widest border border-red-100 hover:bg-red-100 transition shadow-sm uppercase">Logout</button>
+                </div>
+            </div>
+
+            <!-- TAB 1: MAIN DASHBOARD -->
+            <div id="view-main" class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <!-- Panel Form Pengisian -->
+                <div class="lg:col-span-1 bg-slate-50 p-6 rounded-2xl border border-slate-200 shadow-inner overflow-y-auto max-h-[85vh]">
+                    <h2 class="text-[11px] font-black mb-6 text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                        <span class="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+                        Panel Input
+                    </h2>
+                    <form id="form-2a1" class="space-y-5">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="input-group-label ml-1">Program Studi</label>
+                                <select id="id_prodi" class="w-full p-3 border rounded-xl text-[11px] font-bold text-slate-700 bg-white shadow-sm outline-none focus:border-blue-500 transition">
+                                    <option value="1">Teknik Informatika (S1)</option>
+                                    <option value="2">Manajemen Informatika (D3)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="input-group-label ml-1">Tahun Akademik (TS)</label>
+                                <select id="id_tahun" onchange="loadData()" class="w-full p-3 border rounded-xl text-[11px] font-bold text-slate-700 bg-white shadow-sm outline-none focus:border-blue-500 transition">
+                                    <option value="">Memuat Tahun...</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SEKSI PMB -->
+                        <div id="group-pmb" class="form-section border-blue-100 space-y-4">
+                            <div class="flex justify-between items-center border-b border-blue-100 pb-2 mb-2">
+                                <p class="text-[11px] font-black text-blue-700 uppercase italic">Otoritas PMB</p>
+                                <span id="active-pmb" class="hidden text-[8px] bg-blue-600 text-white px-2 py-0.5 rounded-full font-black animate-pulse">ACTIVE</span>
+                            </div>
+                            
+                            <div>
+                                <label class="input-group-label">Daya Tampung</label>
+                                <input type="number" id="daya" class="field-pmb w-full p-2.5 border rounded-xl text-xs font-black shadow-sm" value="0">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="input-group-label">Calon Mahasiswa (Pendaftar)</label>
+                                <input type="number" id="pendaftar" placeholder="Pendaftar Reguler" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="p_afirmasi" placeholder="Pendaftar Afirmasi" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="p_khusus" placeholder="Pendaftar Kebutuhan Khusus" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                            </div>
+
+                            <div class="space-y-2">
+                                <label class="input-group-label">Maba Diterima (Reguler)</label>
+                                <input type="number" id="reg_in" placeholder="Diterima" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="reg_af" placeholder="Afirmasi" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="reg_ks" placeholder="Kebutuhan Khusus" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                            </div>
+
+                            <div class="space-y-2 border-t border-blue-100 pt-2">
+                                <label class="input-group-label text-blue-400">Maba Diterima (RPL)</label>
+                                <input type="number" id="rpl_in" placeholder="Diterima" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="rpl_af" placeholder="Afirmasi" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="rpl_ks" placeholder="Kebutuhan Khusus" class="field-pmb w-full p-2 border rounded-lg text-xs" value="0">
+                            </div>
+                        </div>
+
+                        <!-- SEKSI ALA -->
+                        <div id="group-ala" class="form-section border-green-100 space-y-4">
+                            <div class="flex justify-between items-center border-b border-green-100 pb-2 mb-2">
+                                <p class="text-[11px] font-black text-green-700 uppercase italic">Otoritas ALA</p>
+                                <span id="active-ala" class="hidden text-[8px] bg-green-600 text-white px-2 py-0.5 rounded-full font-black animate-pulse">ACTIVE</span>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <label class="input-group-label">Mahasiswa Aktif (Reguler)</label>
+                                <input type="number" id="a_reg_in" placeholder="Diterima" class="field-ala w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="a_reg_af" placeholder="Afirmasi" class="field-ala w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="a_reg_ks" placeholder="Kebutuhan Khusus" class="field-ala w-full p-2 border rounded-lg text-xs" value="0">
+                            </div>
+
+                            <div class="space-y-2 border-t border-green-100 pt-2">
+                                <label class="input-group-label text-green-400">Mahasiswa Aktif (RPL)</label>
+                                <input type="number" id="a_rpl_in" placeholder="Diterima" class="field-ala w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="a_rpl_af" placeholder="Afirmasi" class="field-ala w-full p-2 border rounded-lg text-xs" value="0">
+                                <input type="number" id="a_rpl_ks" placeholder="Kebutuhan Khusus" class="field-ala w-full p-2 border rounded-lg text-xs" value="0">
+                            </div>
+                        </div>
+
+                        <button type="button" id="btn-submit" onclick="saveData()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-xl active:scale-95 transition text-[11px] tracking-widest uppercase mt-4">Simpan Ke Database</button>
+                        <button type="button" id="btn-cancel-edit" onclick="resetForm()" class="hidden w-full bg-white text-slate-400 border py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest mt-2 hover:bg-slate-100">Batal Edit</button>
+                    </form>
+                </div>
+
+                <!-- Preview Tabel -->
+                <div class="lg:col-span-4 overflow-x-auto">
+                    <div class="flex justify-between items-center mb-6 px-2">
+                        <h2 class="text-xs font-black text-slate-700 uppercase tracking-[0.2em] italic">Preview Laporan LKPS 2.A.1</h2>
+                        <button onclick="exportExcel()" class="bg-green-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black hover:bg-green-700 transition shadow-lg shadow-green-100 flex items-center gap-2 uppercase tracking-widest">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                            Export Excel
+                        </button>
+                    </div>
+                    <table id="main-table" class="min-w-full shadow-2xl rounded-xl overflow-hidden border-none">
+                        <thead>
+                            <tr class="bg-slate-800 text-white text-[0.6rem]">
+                                <th rowspan="3" class="border-slate-700">TS</th>
+                                <th rowspan="3" class="border-slate-700">Daya Tampung</th>
+                                <th colspan="3" class="border-slate-700">Jumlah Calon Mahasiswa</th>
+                                <th colspan="6" class="border-slate-700 font-bold bg-blue-900/50 text-blue-100">Jumlah Mahasiswa Baru</th>
+                                <th colspan="6" class="border-slate-700 font-bold bg-green-900/50 text-green-100">Jumlah Mahasiswa Aktif</th>
+                                <th rowspan="3" class="border-slate-700 bg-slate-900">Aksi</th>
+                            </tr>
+                            <tr class="bg-slate-700 text-[0.55rem] text-slate-200">
+                                <th rowspan="2" class="border-slate-600">Pendaftar</th>
+                                <th rowspan="2" class="border-slate-600">Afirmasi</th>
+                                <th rowspan="2" class="border-slate-600">Kebutuhan Khusus</th>
+                                <th colspan="3" class="border-slate-600 bg-blue-800/40">Reguler</th>
+                                <th colspan="3" class="border-slate-600 bg-blue-800/40">RPL</th>
+                                <th colspan="3" class="border-slate-600 bg-green-800/40">Reguler</th>
+                                <th colspan="3" class="border-slate-600 bg-green-800/40">RPL</th>
+                            </tr>
+                            <tr class="bg-slate-600 text-[0.5rem] text-slate-300">
+                                <th class="border-slate-500">Diterima</th><th class="border-slate-500">Afirmasi</th><th class="border-slate-500">Kebutuhan Khusus</th>
+                                <th class="border-slate-500">Diterima</th><th class="border-slate-500">Afirmasi</th><th class="border-slate-500">Kebutuhan Khusus</th>
+                                <th class="border-slate-500">Diterima</th><th class="border-slate-500">Afirmasi</th><th class="border-slate-500">Kebutuhan Khusus</th>
+                                <th class="border-slate-500">Diterima</th><th class="border-slate-500">Afirmasi</th><th class="border-slate-500">Kebutuhan Khusus</th>
+                            </tr>
+                            <tr class="bg-slate-100 font-black text-[7px] text-slate-400 italic">
+                                <td>(1)</td><td>(2)</td><td>(3)</td><td>(4)</td><td>(5)</td>
+                                <td>(6)</td><td>(7)</td><td>(8)</td><td>(9)</td><td>(10)</td><td>(11)</td>
+                                <td>(12)</td><td>(13)</td><td>(14)</td><td>(15)</td><td>(16)</td><td>(17)</td>
+                                <td>-</td>
+                            </tr>
+                        </thead>
+                        <tbody id="main-tbody" class="bg-white"></tbody>
+                        <tfoot>
+                            <tr class="bg-yellow-50 font-black text-slate-800 border-t-2 border-yellow-200">
+                                <td class="text-left px-4 uppercase text-[9px] tracking-widest">Jumlah Total</td>
+                                <td id="tot-daya">0</td>
+                                <td id="tot-p">0</td><td id="tot-pa">0</td><td id="tot-pk">0</td>
+                                <td id="tot-mr">0</td><td id="tot-mra">0</td><td id="tot-mrk">0</td>
+                                <td id="tot-mrp">0</td><td id="tot-mrpa">0</td><td id="tot-mrpk">0</td>
+                                <td id="tot-ar">0</td><td id="tot-ara">0</td><td id="tot-ark">0</td>
+                                <td id="tot-arp">0</td><td id="tot-arpa">0</td><td id="tot-arpk">0</td>
+                                <td>-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    <div id="loading-table" class="text-center py-12 hidden">
+                        <div class="inline-block loading-spinner" style="display: block; width: 40px; height: 40px;"></div>
+                        <p class="mt-4 text-[10px] text-slate-400 uppercase font-black tracking-widest">Menghubungi Server...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: TRASH -->
+            <div id="view-trash" class="hidden">
+                <div class="bg-red-50 p-8 rounded-3xl border border-red-100 mb-8 shadow-sm">
+                    <div class="flex items-center gap-4 mb-2">
+                        <div class="w-10 h-10 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        </div>
+                        <h3 class="text-sm font-black text-red-700 uppercase tracking-widest">Tempat Sampah Unit <span id="trash-unit-label"></span></h3>
+                    </div>
+                    <p class="text-xs text-red-500 font-medium italic">Data yang dihapus sementara tersimpan di sini. Gunakan Restore untuk mengembalikan ke tabel utama.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="bg-slate-100 text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                                <th class="py-4">Tahun Akademik</th><th class="px-6 text-left">Deskripsi Data</th><th>Waktu Penghapusan</th><th class="py-4">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trash-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Alert Modal (Hard Delete Protection) -->
+    <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/80 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-8 shadow-2xl border-t-8 border-red-600">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter mb-2">Hapus Permanen?</h3>
+                <p id="alert-text" class="text-xs text-slate-500 leading-relaxed font-bold uppercase opacity-70 px-4"></p>
+            </div>
+            <div class="flex flex-col gap-3">
+                <button id="btn-force-delete" class="w-full bg-red-600 text-white font-black py-4 rounded-2xl text-[10px] tracking-widest hover:bg-red-700 shadow-lg active:scale-95 transition uppercase">Ya, Hapus Fisik</button>
+                <button onclick="closeModal()" class="w-full bg-slate-100 text-slate-400 font-black py-4 rounded-2xl text-[10px] tracking-widest hover:bg-slate-200 transition uppercase">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/api";
+        let session = { token: null, unit: null, userId: null, username: null };
+        let allData = []; // Simpan data global untuk fungsi edit
+
+        async function handleLogin() {
+            const userInp = document.getElementById('username').value;
+            const passInp = document.getElementById('password').value;
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: userInp, password: passInp })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    session = { 
+                        token: result.token, 
+                        unit: result.user.unit, 
+                        username: result.user.username,
+                        userId: result.user.id_user || result.user.id_unit 
+                    };
+                    
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('main-content').classList.remove('hidden');
+                    document.getElementById('display-role').innerText = session.unit;
+                    document.getElementById('user-info').innerText = session.username;
+                    document.getElementById('trash-unit-label').innerText = session.unit;
+                    
+                    await loadTahunDropdown();
+                    setupOtoritas();
+                    loadData();
+                } else {
+                    document.getElementById('login-error').innerText = result.message;
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            } catch (err) { 
+                document.getElementById('login-error').innerText = "Server Tidak Merespon";
+                document.getElementById('login-error').classList.remove('hidden');
+            }
+        }
+
+        function handleLogout() { location.reload(); }
+
+        function setupOtoritas() {
+            const u = session.unit ? session.unit.toUpperCase() : "";
+            document.querySelectorAll('.field-pmb').forEach(f => f.disabled = u !== 'PMB' && u !== 'ADMIN');
+            document.querySelectorAll('.field-ala').forEach(f => f.disabled = u !== 'ALA' && u !== 'ADMIN');
+            document.getElementById('active-pmb').classList.toggle('hidden', u !== 'PMB');
+            document.getElementById('active-ala').classList.toggle('hidden', u !== 'ALA');
+        }
+
+        async function loadTahunDropdown() {
+            const select = document.getElementById('id_tahun');
+            try {
+                const res = await fetch(`${API_BASE}/master/tahun-akademik`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+                const result = await res.json();
+                if (result.success) {
+                    select.innerHTML = result.data.sort((a,b) => b.tahun - a.tahun).map(t => `<option value="${t.id_tahun}">${t.tahun}</option>`).join('');
+                }
+            } catch (err) { select.innerHTML = '<option value="3">2024</option>'; }
+        }
+
+        function switchTab(t) {
+            document.getElementById('view-main').classList.toggle('hidden', t !== 'main');
+            document.getElementById('view-trash').classList.toggle('hidden', t !== 'trash');
+            document.getElementById('tab-main').className = t === 'main' ? 'px-2 py-3 text-xs font-black tracking-widest tab-active uppercase' : 'px-2 py-3 text-xs font-black tracking-widest text-slate-300 uppercase';
+            document.getElementById('tab-trash').className = t === 'trash' ? 'px-2 py-3 text-xs font-black tracking-widest tab-active border-red-500 uppercase' : 'px-2 py-3 text-xs font-black tracking-widest text-slate-300 uppercase';
+            if(t === 'trash') loadTrash();
+            else loadData();
+        }
+
+        async function loadData() {
+            const prodi = document.getElementById('id_prodi').value;
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            document.getElementById('loading-table').classList.remove('hidden');
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/${prodi}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+                
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.message || "SQL Error di Server");
+                }
+
+                const result = await res.json();
+                allData = result.data || []; // Simpan data untuk edit
+                const tbody = document.getElementById('main-tbody');
+                tbody.innerHTML = '';
+                
+                if (result.success && result.data.length > 0) {
+                    result.data.forEach((r, idx) => {
+                        tbody.innerHTML += `
+                            <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                                <td class="font-black bg-slate-50 border-r text-slate-700">${r.tahun || "???"}</td>
+                                <td class="font-black text-blue-600">${r.daya_tampung || 0}</td>
+                                <td class="bg-blue-50/20">${r.pendaftar || 0}</td>
+                                <td class="bg-blue-50/20">${r.pendaftar_afirmasi || 0}</td>
+                                <td class="bg-blue-50/20 border-r">${r.pendaftar_khusus || 0}</td>
+                                <td>${r.maba_reg_diterima || 0}</td><td>${r.maba_reg_afirmasi || 0}</td><td class="border-r">${r.maba_reg_khusus || 0}</td>
+                                <td>${r.maba_rpl_diterima || 0}</td><td>${r.maba_rpl_afirmasi || 0}</td><td class="border-r-2 border-slate-100">${r.maba_rpl_khusus || 0}</td>
+                                <td class="bg-green-50/20">${r.aktif_reg_diterima || 0}</td><td class="bg-green-50/20">${r.aktif_reg_afirmasi || 0}</td><td class="bg-green-50/20 border-r">${r.aktif_reg_khusus || 0}</td>
+                                <td class="bg-green-50/20">${r.aktif_rpl_diterima || 0}</td><td class="bg-green-50/20">${r.aktif_rpl_afirmasi || 0}</td><td class="bg-green-50/20 border-r">${r.aktif_rpl_khusus || 0}</td>
+                                <td class="px-2 flex flex-col gap-1 py-1">
+                                    <button onclick="editData(${idx})" class="text-[7px] bg-yellow-50 text-yellow-600 px-2 py-1 rounded font-black hover:bg-yellow-500 hover:text-white transition uppercase">Edit</button>
+                                    <button onclick="softDelete(${r.id_2a1})" class="text-[7px] bg-red-50 text-red-500 px-2 py-1 rounded font-black hover:bg-red-500 hover:text-white transition uppercase">Hapus</button>
+                                </td>
+                            </tr>`;
+                    });
+                    calculateSummary(result.data);
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="18" class="py-12 text-slate-300 font-black uppercase text-[10px] tracking-[0.3em]">No Data Found</td></tr>';
+                }
+                loadTrashCount();
+            } catch (err) { 
+                const tbody = document.getElementById('main-tbody');
+                tbody.innerHTML = `<tr><td colspan="18" class="py-12 text-red-500 font-black uppercase text-[10px] bg-red-50/50 border border-red-100">Gagal: ${err.message}</td></tr>`;
+            }
+            finally { document.getElementById('loading-table').classList.add('hidden'); }
+        }
+
+        // FUNGSI EDIT DATA
+        function editData(index) {
+            const data = allData[index];
+            if(!data) return;
+
+            // Masuk ke Mode Edit (Visual)
+            document.getElementById('form-2a1').classList.add('editing-mode');
+            document.getElementById('btn-submit').innerText = "UPDATE DATA";
+            document.getElementById('btn-submit').classList.replace('bg-slate-900', 'bg-blue-600');
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            // Isi Dropdown
+            document.getElementById('id_prodi').value = data.prodi_id_prodi;
+            document.getElementById('id_tahun').value = data.tahun_akademik_id_tahun;
+
+            // Isi Field PMB
+            document.getElementById('daya').value = data.daya_tampung || 0;
+            document.getElementById('pendaftar').value = data.pendaftar || 0;
+            document.getElementById('p_afirmasi').value = data.pendaftar_afirmasi || 0;
+            document.getElementById('p_khusus').value = data.pendaftar_khusus || 0;
+            document.getElementById('reg_in').value = data.maba_reg_diterima || 0;
+            document.getElementById('reg_af').value = data.maba_reg_afirmasi || 0;
+            document.getElementById('reg_ks').value = data.maba_reg_khusus || 0;
+            document.getElementById('rpl_in').value = data.maba_rpl_diterima || 0;
+            document.getElementById('rpl_af').value = data.maba_rpl_afirmasi || 0;
+            document.getElementById('rpl_ks').value = data.maba_rpl_khusus || 0;
+
+            // Isi Field ALA
+            document.getElementById('a_reg_in').value = data.aktif_reg_diterima || 0;
+            document.getElementById('a_reg_af').value = data.aktif_reg_afirmasi || 0;
+            document.getElementById('a_reg_ks').value = data.aktif_reg_khusus || 0;
+            document.getElementById('a_rpl_in').value = data.aktif_rpl_diterima || 0;
+            document.getElementById('a_rpl_af').value = data.aktif_rpl_afirmasi || 0;
+            document.getElementById('a_rpl_ks').value = data.aktif_rpl_khusus || 0;
+
+            // Scroll ke atas form
+            document.getElementById('form-2a1').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function resetForm() {
+            document.getElementById('form-2a1').reset();
+            document.getElementById('form-2a1').classList.remove('editing-mode');
+            document.getElementById('btn-submit').innerText = "SIMPAN KE DATABASE";
+            document.getElementById('btn-submit').classList.replace('bg-blue-600', 'bg-slate-900');
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+        }
+
+        async function softDelete(id) {
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            try {
+                await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/delete`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                    body: JSON.stringify({ id_2a1: id, user_id: session.userId })
+                });
+                loadData();
+            } catch (err) { console.error(err); }
+        }
+
+        async function loadTrash() {
+            const prodi = document.getElementById('id_prodi').value;
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/trash/${prodi}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+                const result = await res.json();
+                const tbody = document.getElementById('trash-tbody');
+                tbody.innerHTML = '';
+                if (result.data && result.data.length > 0) {
+                    result.data.forEach(r => {
+                        tbody.innerHTML += `
+                            <tr class="text-xs border-b border-slate-100 hover:bg-slate-50 transition">
+                                <td class="font-black py-5 text-slate-700">${r.tahun}</td>
+                                <td class="text-left font-bold text-slate-400 px-6 uppercase tracking-tighter italic">Data Tahun Akademik ${r.tahun}</td>
+                                <td class="text-slate-400 font-medium">${new Date().toLocaleDateString('id-ID')}</td>
+                                <td class="flex gap-3 justify-center py-4">
+                                    <button onclick="restore(${r.id_2a1})" class="bg-blue-600 text-white px-6 py-2 rounded-xl font-black text-[10px] uppercase">Restore</button>
+                                    <button onclick="hardDelete(${r.id_2a1})" class="bg-red-50 text-red-600 border px-6 py-2 rounded-xl font-black text-[10px] uppercase hover:bg-red-600 hover:text-white transition">Hard Delete</button>
+                                </td>
+                            </tr>`;
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-12 text-slate-300 font-black uppercase text-[10px]">Trash Empty</td></tr>';
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        async function restore(id) {
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/restore/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.token}` } });
+            loadTrash();
+        }
+
+        async function hardDelete(id, force = false) {
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            const action = force ? 'force-delete' : 'hard-delete';
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/${action}/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${session.token}` } });
+                const result = await res.json();
+                if (result.requiresConfirmation) {
+                    document.getElementById('alert-text').innerText = result.message;
+                    document.getElementById('modal-alert').classList.remove('hidden');
+                    document.getElementById('btn-force-delete').onclick = () => { closeModal(); hardDelete(id, true); };
+                } else {
+                    loadTrash();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function closeModal() { document.getElementById('modal-alert').classList.add('hidden'); }
+
+        async function saveData() {
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            const getVal = (id) => parseInt(document.getElementById(id).value) || 0;
+            const payload = {
+                id_prodi: parseInt(document.getElementById('id_prodi').value),
+                id_tahun: parseInt(document.getElementById('id_tahun').value),
+                user_id: session.userId,
+                daya: getVal('daya'), pendaftar: getVal('pendaftar'), p_afirmasi: getVal('p_afirmasi'), p_khusus: getVal('p_khusus'),
+                reg_in: getVal('reg_in'), reg_af: getVal('reg_af'), reg_ks: getVal('reg_ks'),
+                rpl_in: getVal('rpl_in'), rpl_af: getVal('rpl_af'), rpl_ks: getVal('rpl_ks'),
+                a_reg_in: getVal('a_reg_in'), a_reg_af: getVal('a_reg_af'), a_reg_ks: getVal('a_reg_ks'),
+                a_rpl_in: getVal('a_rpl_in'), a_rpl_af: getVal('a_rpl_af'), a_rpl_ks: getVal('a_rpl_ks')
+            };
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/store`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                if(result.success) {
+                    resetForm();
+                    loadData();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function calculateSummary(data) {
+             const sum = (key) => data.reduce((a, b) => a + (parseInt(b[key]) || 0), 0);
+             const targets = ['tot-daya','tot-p','tot-pa','tot-pk','tot-mr','tot-mra','tot-mrk','tot-mrp','tot-mrpa','tot-mrpk','tot-ar','tot-ara','tot-ark','tot-arp','tot-arpa','tot-arpk'];
+             const keys = ['daya_tampung','pendaftar','pendaftar_afirmasi','pendaftar_khusus','maba_reg_diterima','maba_reg_afirmasi','maba_reg_khusus','maba_rpl_diterima','maba_rpl_afirmasi','maba_rpl_khusus','aktif_reg_diterima','aktif_reg_afirmasi','aktif_reg_khusus','aktif_rpl_diterima','aktif_rpl_afirmasi','aktif_rpl_khusus'];
+             keys.forEach((k, i) => { if(document.getElementById(targets[i])) document.getElementById(targets[i]).innerText = sum(k); });
+        }
+
+        async function loadTrashCount() {
+            const prodi = document.getElementById('id_prodi').value;
+            const endpoint = session.unit.toLowerCase() === 'ala' ? 'ala' : 'pmb';
+            try {
+                const res = await fetch(`${API_BASE}/${endpoint}/2a1-data-mahasiswa/trash/${prodi}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+                const result = await res.json();
+                document.getElementById('trash-count').innerText = result.data ? result.data.length : 0;
+            } catch (err) { console.error(err); }
+        }
+
+        function exportExcel() {
+            window.open(`${API_BASE}/${session.unit.toLowerCase()}/2a1-data-mahasiswa/export/${document.getElementById('id_prodi').value}`, '_blank');
+        }
+    </script>
+</body>
+</html>

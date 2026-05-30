@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-Akreditasi 5.1 - Unit SISFO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tab-active { border-bottom: 4px solid #6366f1; color: #6366f1; font-weight: 800; }
+        .input-group-label { font-size: 0.6rem; font-weight: 800; color: #64748b; letter-spacing: 0.05em; margin-bottom: 4px; text-transform: uppercase; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen font-sans text-slate-800">
+
+    <!-- Login (Konsisten 2.C) -->
+    <div id="login-screen" class="flex items-center justify-center min-h-screen">
+        <div class="bg-white p-10 rounded-2xl shadow-2xl w-96 border-t-8 border-indigo-600">
+            <div class="flex justify-center mb-6"><div class="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center text-white text-3xl font-black">SF</div></div>
+            <h1 class="text-2xl font-bold text-center mb-1">SI-Akreditasi</h1>
+            <p class="text-[10px] text-slate-400 text-center mb-8 uppercase font-bold tracking-widest">Sistem Tata Kelola (5.1)</p>
+            <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-4">
+                <input type="text" id="username" required placeholder="Username" class="w-full p-3 border rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="password" id="password" required placeholder="Password" class="w-full p-3 border rounded-xl bg-slate-50 outline-none focus:ring-2 focus:ring-indigo-500">
+                <button type="submit" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl shadow-lg uppercase text-xs">Masuk</button>
+            </form>
+            <div id="login-error" class="hidden mt-6 p-3 bg-red-50 text-red-600 text-[10px] text-center rounded-xl font-bold"></div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden p-6">
+        <div class="max-w-[98%] mx-auto bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-8 border-b pb-6">
+                <div class="flex items-center gap-5">
+                    <div class="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg">SF</div>
+                    <div>
+                        <h1 class="text-xl font-black tracking-tight uppercase text-slate-800">Sistem Tata Kelola (5.1)</h1>
+                        <p class="text-[11px] text-slate-400 font-bold uppercase tracking-widest">Akun: <span id="user-info" class="text-indigo-600 lowercase"></span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6">
+                    <nav class="flex gap-4">
+                        <button onclick="switchTab('main')" id="tab-main" class="px-2 py-3 text-xs font-black transition tab-active uppercase">Dashboard</button>
+                        <button onclick="switchTab('trash')" id="tab-trash" class="px-2 py-3 text-xs font-black text-slate-300 hover:text-red-500 transition uppercase">Trash <span id="trash-count" class="bg-red-500 text-white px-1.5 rounded-full text-[8px]">0</span></button>
+                    </nav>
+                    <button onclick="handleLogout()" class="bg-red-50 text-red-600 px-6 py-2.5 rounded-xl text-[10px] font-black border border-red-100 uppercase">Logout</button>
+                </div>
+            </div>
+
+            <!-- View Main -->
+            <div id="view-main">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest italic">Database Sistem Informasi - Unit SISFO</h2>
+                    <div class="flex gap-3">
+                        <button onclick="exportExcel()" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl text-[10px] font-black uppercase">Ekspor Excel</button>
+                        <button onclick="showForm()" class="bg-indigo-600 text-white px-8 py-2.5 rounded-xl text-[10px] font-black uppercase">+ Tambah Data</button>
+                    </div>
+                </div>
+                <div class="overflow-hidden rounded-2xl border">
+                    <table class="w-full">
+                        <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase font-black">
+                            <tr>
+                                <th class="p-4 border-r w-12">No</th>
+                                <th class="p-4 border-r text-left">Jenis Tata Kelola</th>
+                                <th class="p-4 border-r text-left">Nama Sistem</th>
+                                <th class="p-4 border-r text-center">Akses</th>
+                                <th class="p-4 border-r text-left">Unit Pengelola</th>
+                                <th class="p-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="main-tbody" class="text-sm font-semibold text-slate-700"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- View Trash -->
+            <div id="view-trash" class="hidden">
+                <div class="bg-red-50 p-8 rounded-3xl border border-red-100 mb-8"><h3 class="text-sm font-black text-red-700 uppercase">Tempat Sampah</h3></div>
+                <table class="w-full border-collapse">
+                    <thead><tr class="bg-slate-100 text-[10px] font-black uppercase text-slate-500"><th class="p-4 border">ID</th><th class="p-4 border">Nama Sistem</th><th class="p-4 border">Aksi</th></tr></thead>
+                    <tbody id="trash-tbody" class="text-sm font-bold text-slate-600"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-slate-900/60 hidden flex items-center justify-center p-6 backdrop-blur-md">
+        <div class="bg-white p-10 rounded-[3rem] w-full max-w-lg shadow-3xl">
+            <h2 id="modal-title" class="text-2xl font-black text-indigo-600 uppercase mb-8">Form Tata Kelola</h2>
+            <form id="form" onsubmit="saveData(event)" class="space-y-6">
+                <input type="hidden" id="id_5_1">
+                <div><label class="input-group-label block">Jenis Tata Kelola</label><input type="text" id="jenis_tata_kelola" class="w-full p-4 bg-slate-50 rounded-2xl outline-none" required></div>
+                <div><label class="input-group-label block">Nama Sistem Informasi</label><input type="text" id="nama_sistem" class="w-full p-4 bg-slate-50 rounded-2xl outline-none" required></div>
+                <div><label class="input-group-label block">Akses</label><select id="akses" class="w-full p-4 bg-slate-50 rounded-2xl outline-none"><option value="Lokal">Lokal</option><option value="Internet">Internet</option></select></div>
+                <div><label class="input-group-label block">Unit Pengelola</label><select id="id_unit" class="w-full p-4 bg-slate-50 rounded-2xl outline-none"></select></div>
+                <div><label class="input-group-label block">Link Bukti</label><input type="text" id="link_bukti" class="w-full p-4 bg-slate-50 rounded-2xl outline-none"></div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="hideForm()" class="px-6 py-2 text-slate-400 font-bold uppercase text-[10px]">Batal</button>
+                    <button type="submit" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black uppercase text-xs shadow-xl">Simpan Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api/sisfo/5-1-sistem-tata-kelola";
+        let session = { token: null };
+
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`http://localhost:5000/api/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+            const result = await res.json();
+            if (result.success) {
+                session = { token: result.token, username: result.user.username };
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                document.getElementById('user-info').innerText = session.username;
+                loadData();
+            } else { document.getElementById('login-error').innerText = result.message; document.getElementById('login-error').classList.remove('hidden'); }
+        }
+
+        function handleLogout() { location.reload(); }
+
+        async function loadData() {
+            const res = await fetch(API_URL, { headers: { 'Authorization': `Bearer ${session.token}` } });
+            const result = await res.json();
+            if (result.success) {
+                document.getElementById('id_unit').innerHTML = `<option value="">-- Pilih Unit --</option>` + result.units.map(u => `<option value="${u.id_unit}">${u.nama_unit}</option>`).join('');
+                document.getElementById('main-tbody').innerHTML = result.data.map((r, idx) => `
+                    <tr class="border-b hover:bg-slate-50/50 transition">
+                        <td class="p-4 border-r text-center font-bold text-slate-300">${idx + 1}</td>
+                        <td class="p-4 border-r font-black text-indigo-700 uppercase text-xs">${r.jenis_tata_kelola}</td>
+                        <td class="p-4 border-r font-bold text-slate-800">${r.nama_sistem}</td>
+                        <td class="p-4 border-r text-center"><span class="px-3 py-1 rounded-full text-[9px] font-black uppercase ${r.akses === 'Internet' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}">${r.akses}</span></td>
+                        <td class="p-4 border-r text-slate-500 font-bold">${r.nama_unit || '-'}</td>
+                        <td class="p-4 text-center">
+                            <button onclick="editData(${r.id_5_1})" class="text-indigo-600 font-black text-[10px] uppercase mr-4">Edit</button>
+                            <button onclick="deleteData(${r.id_5_1})" class="text-rose-500 font-black text-[10px] uppercase">Hapus</button>
+                        </td>
+                    </tr>`).join('');
+                loadTrashCount();
+            }
+        }
+
+        function showForm() { document.getElementById('form').reset(); document.getElementById('id_5_1').value = ""; document.getElementById('modal').classList.remove('hidden'); }
+        function hideForm() { document.getElementById('modal').classList.add('hidden'); }
+
+        async function editData(id) {
+            const res = await fetch(`${API_URL}/${id}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+            const result = await res.json();
+            if (result.success) {
+                const d = result.data;
+                document.getElementById('id_5_1').value = d.id_5_1;
+                document.getElementById('jenis_tata_kelola').value = d.jenis_tata_kelola;
+                document.getElementById('nama_sistem').value = d.nama_sistem;
+                document.getElementById('akses').value = d.akses;
+                document.getElementById('id_unit').value = d.id_unit || "";
+                document.getElementById('link_bukti').value = d.link_bukti;
+                document.getElementById('modal').classList.remove('hidden');
+            }
+        }
+
+        async function saveData(e) {
+            e.preventDefault();
+            const id = document.getElementById('id_5_1').value;
+            const data = { jenis_tata_kelola: document.getElementById('jenis_tata_kelola').value, nama_sistem: document.getElementById('nama_sistem').value, akses: document.getElementById('akses').value, id_unit: document.getElementById('id_unit').value || null, link_bukti: document.getElementById('link_bukti').value };
+            const res = await fetch(id ? `${API_URL}/${id}` : API_URL, { method: id ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` }, body: JSON.stringify(data) });
+            const result = await res.json(); alert(result.message); hideForm(); loadData();
+        }
+
+        async function deleteData(id) { if (confirm("Pindahkan ke sampah?")) { await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${session.token}` } }); loadData(); } }
+        function switchTab(t) { document.getElementById('view-main').classList.toggle('hidden', t !== 'main'); document.getElementById('view-trash').classList.toggle('hidden', t !== 'trash'); if(t === 'trash') loadTrash(); }
+        async function loadTrash() {
+            const res = await fetch(`${API_URL}/trash`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+            const result = await res.json();
+            document.getElementById('trash-tbody').innerHTML = result.data.map(r => `<tr class="border-b"><td class="p-4 border text-center">${r.id_5_1}</td><td class="p-4 border uppercase">${r.nama_sistem}</td><td class="p-4 border text-center"><button onclick="restore(${r.id_5_1})" class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-[10px] font-black mr-2">RESTORE</button><button onclick="hardDelete(${r.id_5_1})" class="text-rose-600 font-black text-[10px]">HARD DELETE</button></td></tr>`).join('');
+        }
+        async function restore(id) { await fetch(`${API_URL}/restore/${id}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${session.token}` } }); loadTrash(); loadData(); }
+        async function hardDelete(id) { if(confirm("HAPUS PERMANEN?")) { await fetch(`${API_URL}/hard-destroy/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${session.token}` } }); loadTrash(); } }
+        async function loadTrashCount() { const res = await fetch(`${API_URL}/trash`, { headers: { 'Authorization': `Bearer ${session.token}` } }); const result = await res.json(); document.getElementById('trash-count').innerText = result.data.length; }
+        function exportExcel() { window.open(`${API_URL}/export?token=${session.token}`, '_blank'); }
+    </script>
+</body>
+</html>

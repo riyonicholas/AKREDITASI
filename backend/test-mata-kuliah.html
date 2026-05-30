@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Uji Coba CRUD Master Mata Kuliah</title>
+</head>
+<body>
+    <h1>Tabel Master: Mata Kuliah</h1>
+    <div id="auth-section">
+        <h3>1. Login (Dapatkan Token JWT)</h3>
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <p>Token: <small id="token-status">Belum Login</small></p>
+    </div>
+    <hr>
+    <div id="form-section">
+        <h3>2. Input/Update Data</h3>
+        <input type="hidden" id="id_mk">
+        <input type="number" id="id_prodi" placeholder="ID Prodi"><br>
+        <input type="text" id="kode_mk" placeholder="Kode MK"><br>
+        <input type="text" id="nama_mk" placeholder="Nama MK"><br>
+        <input type="number" id="sks" placeholder="SKS"><br>
+        <input type="number" id="semester" placeholder="Semester"><br><br>
+        <button onclick="saveData()">Simpan Data</button>
+        <button onclick="resetForm()">Reset Form</button>
+    </div>
+    <hr>
+    <div id="list-section">
+        <h3>3. Data Mata Kuliah</h3>
+        <button onclick="fetchData()">Refresh Data</button>
+        <table border="1" id="data-table" style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>ID MK</th><th>Prodi</th><th>Kode MK</th><th>Nama MK</th><th>SKS</th><th>Semester</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        const BASE_URL = 'http://localhost:5000/api';
+        let token = localStorage.getItem('token') || '';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`${BASE_URL}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await res.json();
+            if (result.success) {
+                token = result.token; localStorage.setItem('token', token);
+                document.getElementById('token-status').innerText = 'Tersimpan!'; alert('Login Berhasil!');
+            } else alert(result.message);
+        }
+
+        async function fetchData() {
+            const res = await fetch(`${BASE_URL}/master/mata-kuliah`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+            const tbody = document.querySelector('#data-table tbody'); tbody.innerHTML = '';
+            if (result.success) {
+                result.data.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.id_mk}</td><td>${item.nama_prodi || item.id_prodi}</td><td>${item.kode_mk}</td>
+                            <td>${item.nama_mk}</td><td>${item.sks}</td><td>${item.semester}</td>
+                            <td><button onclick="editData(${item.id_mk}, ${item.id_prodi}, '${item.kode_mk}', '${item.nama_mk}', ${item.sks}, ${item.semester})">Edit</button>
+                            <button onclick="deleteData(${item.id_mk})">Hapus</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function editData(id, prodi, kode, nama, sks, sem) {
+            document.getElementById('id_mk').value = id;
+            document.getElementById('id_prodi').value = prodi;
+            document.getElementById('kode_mk').value = kode;
+            document.getElementById('nama_mk').value = nama;
+            document.getElementById('sks').value = sks;
+            document.getElementById('semester').value = sem;
+        }
+
+        async function saveData() {
+            const id = document.getElementById('id_mk').value;
+            const data = {
+                id_prodi: document.getElementById('id_prodi').value,
+                kode_mk: document.getElementById('kode_mk').value,
+                nama_mk: document.getElementById('nama_mk').value,
+                sks: document.getElementById('sks').value,
+                semester: document.getElementById('semester').value
+            };
+            const res = await fetch(id ? `${BASE_URL}/master/mata-kuliah/${id}` : `${BASE_URL}/master/mata-kuliah`, {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json(); alert(result.message);
+            fetchData(); resetForm();
+        }
+
+        async function deleteData(id) {
+            if (confirm('Yakin hapus?')) {
+                const res = await fetch(`${BASE_URL}/master/mata-kuliah/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json(); alert(result.message); fetchData();
+            }
+        }
+
+        function resetForm() { document.querySelectorAll('#form-section input').forEach(el => el.value = ''); }
+    </script>
+</body>
+</html>

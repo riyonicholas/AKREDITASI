@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Uji Coba CRUD Master CPMK</title>
+</head>
+<body>
+    <h1>Tabel Master: CPMK</h1>
+    <div id="auth-section">
+        <h3>1. Login (Dapatkan Token JWT)</h3>
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <p>Token: <small id="token-status">Belum Login</small></p>
+    </div>
+    <hr>
+    <div id="form-section">
+        <h3>2. Input/Update Data</h3>
+        <input type="hidden" id="id_cpmk">
+        <input type="number" id="id_prodi" placeholder="ID Prodi"><br>
+        <!-- Kode CPMK dibuat otomatis oleh backend -->
+        <textarea id="deskripsi_cpmk" placeholder="Deskripsi CPMK" rows="3" cols="30"></textarea><br><br>
+        <button onclick="saveData()">Simpan Data</button>
+        <button onclick="resetForm()">Reset Form</button>
+    </div>
+    <hr>
+    <div id="list-section">
+        <h3>3. Data CPMK</h3>
+        <button onclick="fetchData()">Refresh Data</button>
+        <table border="1" id="data-table" style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>ID CPMK</th><th>Prodi</th><th>Kode CPMK</th><th>Deskripsi</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        const BASE_URL = 'http://localhost:5000/api';
+        let token = localStorage.getItem('token') || '';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`${BASE_URL}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await res.json();
+            if (result.success) {
+                token = result.token; localStorage.setItem('token', token);
+                document.getElementById('token-status').innerText = 'Tersimpan!'; alert('Login Berhasil!');
+            } else alert(result.message);
+        }
+
+        async function fetchData() {
+            const res = await fetch(`${BASE_URL}/master/cpmk`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+            const tbody = document.querySelector('#data-table tbody'); tbody.innerHTML = '';
+            if (result.success) {
+                result.data.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.id_cpmk}</td><td>${item.nama_prodi || item.id_prodi}</td><td>${item.kode_cpmk}</td>
+                            <td>${item.deskripsi_cpmk}</td>
+                            <td><button onclick="editData(${item.id_cpmk}, ${item.id_prodi}, '${item.deskripsi_cpmk.replace(/'/g, "\\'")}')">Edit</button>
+                            <button onclick="deleteData(${item.id_cpmk})">Hapus</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function editData(id, prodi, deskripsi) {
+            document.getElementById('id_cpmk').value = id;
+            document.getElementById('id_prodi').value = prodi;
+            document.getElementById('deskripsi_cpmk').value = deskripsi;
+        }
+
+        async function saveData() {
+            const id = document.getElementById('id_cpmk').value;
+            const data = {
+                id_prodi: document.getElementById('id_prodi').value,
+                deskripsi_cpmk: document.getElementById('deskripsi_cpmk').value
+            };
+            const res = await fetch(id ? `${BASE_URL}/master/cpmk/${id}` : `${BASE_URL}/master/cpmk`, {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json(); alert(result.message);
+            fetchData(); resetForm();
+        }
+
+        async function deleteData(id) {
+            if (confirm('Yakin hapus?')) {
+                const res = await fetch(`${BASE_URL}/master/cpmk/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json(); alert(result.message); fetchData();
+            }
+        }
+
+        function resetForm() { 
+            document.querySelectorAll('#form-section input').forEach(el => el.value = ''); 
+            document.getElementById('deskripsi_cpmk').value = '';
+        }
+    </script>
+</body>
+</html>

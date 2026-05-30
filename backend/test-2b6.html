@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Backend Test Bench 2.B.6 - Accuracy Version</title>
+    <style>
+        body { font-family: 'Courier New', monospace; background: #121212; color: #e0e0e0; padding: 20px; }
+        .box { border: 1px solid #333; padding: 15px; margin-bottom: 20px; background: #1e1e1e; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th, td { border: 1px solid #444; padding: 6px; text-align: center; }
+        th { background: #333; color: #4fc3f7; }
+        .row-avg { background: #263238; font-weight: bold; }
+        input { background: #2d2d2d; color: #fff; border: 1px solid #555; width: 60px; text-align: center; }
+        .btn { cursor: pointer; border: none; padding: 6px 12px; font-weight: bold; border-radius: 3px; }
+        .btn-blue { background: #1976d2; color: white; }
+        .btn-green { background: #388e3c; color: white; }
+        .btn-red { background: #d32f2f; color: white; }
+        .status-pill { padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+        .pill-ok { background: #1b5e20; color: #a5d6a7; }
+        .pill-warn { background: #b71c1c; color: #ef9a9a; }
+    </style>
+</head>
+<body>
+
+    <h3>🛠️ Backend Tester 2.B.6 (Accuracy & Integrity)</h3>
+
+    <!-- CONFIG -->
+    <div class="box">
+        <input type="text" id="u" placeholder="User" style="width:80px">
+        <input type="password" id="p" placeholder="Pass" style="width:80px">
+        <button onclick="login()" class="btn btn-blue">Login</button> |
+        Prodi: <input type="number" id="f_prodi" value="1" style="width:40px">
+        Tahun: <input type="number" id="f_tahun" value="3" style="width:40px">
+        <button onclick="fetchAll()" class="btn btn-green">FETCH INDEX</button>
+        <button onclick="tembakExport()" style="background:#795548; color:white;" class="btn">EXPORT EXCEL</button>
+    </div>
+
+    <!-- MAIN TESTER -->
+    <div class="box">
+        <table>
+            <thead>
+                <tr>
+                    <th>Kemampuan</th>
+                    <th>SB (%)</th><th>B (%)</th><th>C (%)</th><th>K (%)</th>
+                    <th>Total Baris</th>
+                    <th>Rencana Tindak Lanjut</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="active-list"></tbody>
+            <tfoot>
+                <tr class="row-avg">
+                    <td>RATA-RATA (%)</td>
+                    <td id="avg-sb">0</td><td id="avg-b">0</td><td id="avg-c">0</td><td id="avg-k">0</td>
+                    <td id="avg-all">0</td>
+                    <td>-</td><td>-</td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <div style="margin-top: 15px; font-size: 12px; color: #aaa;">
+            Alumni (2B4): <span id="m_alumni" style="color:white">0</span> | 
+            Mhs Aktif (2A1): <span id="m_mhs" style="color:white">0</span> | 
+            Responden: <input type="number" id="m_resp" value="0">
+        </div>
+
+        <button onclick="saveBatch()" id="btn-save" class="btn btn-blue" style="width:100%; margin-top:15px">EXECUTE POST /store (VALIDATE 100% FIRST)</button>
+    </div>
+
+    <!-- TRASH TESTER -->
+    <div class="box" style="border-color: #f4511e;">
+        <p style="color: #f4511e; margin:0 0 10px 0;"><strong>Trash & Permanent Delete Test</strong></p>
+        <button onclick="loadTrash()" class="btn" style="background:#444; color:white">LOAD TRASH</button>
+        <div id="trash-list" style="margin-top:10px; font-size:12px"></div>
+    </div>
+
+<script>
+    const API = 'http://localhost:5000/api/kemahasiswaan/2b6-kepuasan';
+    let token = '';
+    const items = ["Kerjasama Tim", "Keahlian di Bidang Prodi", "Kemampuan Berbahasa Asing (Inggris)", "Kemampuan Berkomunikasi", "Pengembangan Diri", "Kepemimpinan", "Etos Kerja"];
+
+    // Init rows
+    document.getElementById('active-list').innerHTML = items.map((n, i) => `
+        <tr>
+            <td style="text-align:left">${n}</td>
+            <td><input type="number" class="i-sb" oninput="validate()" data-idx="${i}"></td>
+            <td><input type="number" class="i-b" oninput="validate()" data-idx="${i}"></td>
+            <td><input type="number" class="i-c" oninput="validate()" data-idx="${i}"></td>
+            <td><input type="number" class="i-k" oninput="validate()" data-idx="${i}"></td>
+            <td id="tot-${i}" class="status-pill pill-warn">0%</td>
+            <td><input type="text" class="i-rtl" style="width:120px" data-idx="${i}"></td>
+            <td><button id="del-${i}" style="display:none" class="btn-red" onclick="softDelete(${i})">X</button></td>
+        </tr>
+    `).join('');
+
+    async function login() {
+        const res = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value })
+        });
+        const d = await res.json();
+        if(d.success) { token = d.token; fetchAll(); }
+    }
+
+    function validate() {
+        let totalAllRowsValid = true;
+        let sumSB=0, sumB=0, sumC=0, sumK=0;
+
+        items.forEach((_, i) => {
+            const sb = parseFloat(document.querySelector(`.i-sb[data-idx="${i}"]`).value || 0);
+            const b = parseFloat(document.querySelector(`.i-b[data-idx="${i}"]`).value || 0);
+            const c = parseFloat(document.querySelector(`.i-c[data-idx="${i}"]`).value || 0);
+            const k = parseFloat(document.querySelector(`.i-k[data-idx="${i}"]`).value || 0);
+            
+            const total = sb + b + c + k;
+            const el = document.getElementById(`tot-${i}`);
+            el.innerText = total + "%";
+            
+            if(total === 100) { el.className = 'status-pill pill-ok'; }
+            else { el.className = 'status-pill pill-warn'; totalAllRowsValid = false; }
+
+            sumSB += sb; sumB += b; sumC += c; sumK += k;
+        });
+
+        // Calc Averages
+        const count = items.length;
+        document.getElementById('avg-sb').innerText = (sumSB/count).toFixed(2);
+        document.getElementById('avg-b').innerText = (sumB/count).toFixed(2);
+        document.getElementById('avg-c').innerText = (sumC/count).toFixed(2);
+        document.getElementById('avg-k').innerText = (sumK/count).toFixed(2);
+        document.getElementById('avg-all').innerText = ((sumSB+sumB+sumC+sumK)/count).toFixed(2);
+
+        document.getElementById('btn-save').disabled = !totalAllRowsValid;
+        document.getElementById('btn-save').innerText = totalAllRowsValid ? "EXECUTE POST (READY)" : "BARIS BELUM 100%!";
+    }
+
+    async function fetchAll() {
+        const res = await fetch(`${API}?id_prodi=${document.getElementById('f_prodi').value}&id_tahun=${document.getElementById('f_tahun').value}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const result = await res.json();
+        if(result.success) {
+            document.getElementById('m_alumni').innerText = result.metadata.jml_alumni_3_tahun;
+            document.getElementById('m_mhs').innerText = result.metadata.jml_mhs_aktif_ts;
+            document.getElementById('m_resp').value = result.metadata.jml_responden;
+
+            result.data.forEach(d => {
+                const idx = items.indexOf(d.jenis_kemampuan);
+                if(idx !== -1) {
+                    document.querySelector(`.i-sb[data-idx="${idx}"]`).value = d.sangat_baik;
+                    document.querySelector(`.i-b[data-idx="${idx}"]`).value = d.baik;
+                    document.querySelector(`.i-c[data-idx="${idx}"]`).value = d.cukup;
+                    document.querySelector(`.i-k[data-idx="${idx}"]`).value = d.kurang;
+                    document.querySelector(`.i-rtl[data-idx="${idx}"]`).value = d.rencana_tindak_lanjut;
+                    document.getElementById(`del-${idx}`).style.display = 'inline';
+                    document.getElementById(`del-${idx}`).onclick = () => softDelete(d.id_2b6);
+                }
+            });
+            validate();
+        }
+    }
+
+    async function saveBatch() {
+        const payload = {
+            penilaian: items.map((n, i) => ({
+                id_prodi: document.getElementById('f_prodi').value,
+                id_tahun: document.getElementById('f_tahun').value,
+                jenis_kemampuan: n,
+                sangat_baik: document.querySelector(`.i-sb[data-idx="${i}"]`).value,
+                baik: document.querySelector(`.i-b[data-idx="${i}"]`).value,
+                cukup: document.querySelector(`.i-c[data-idx="${i}"]`).value,
+                kurang: document.querySelector(`.i-k[data-idx="${i}"]`).value,
+                rencana_tindak_lanjut: document.querySelector(`.i-rtl[data-idx="${i}"]`).value
+            })),
+            metadata: {
+                id_prodi: document.getElementById('f_prodi').value,
+                id_tahun: document.getElementById('f_tahun').value,
+                jml_alumni_3_tahun: document.getElementById('m_alumni').innerText,
+                jml_mhs_aktif_ts: document.getElementById('m_mhs').innerText,
+                jml_responden: document.getElementById('m_resp').value
+            }
+        };
+        const res = await fetch(API, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+        const r = await res.json(); alert(r.message); fetchAll();
+    }
+
+    async function loadTrash() {
+        const res = await fetch(`${API}/trash?id_prodi=${document.getElementById('f_prodi').value}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const r = await res.json();
+        document.getElementById('trash-list').innerHTML = r.data.map(d => `
+            <div>- ${d.jenis_kemampuan} (ID:${d.id_2b6}) 
+                <button onclick="restore(${d.id_2b6})" class="btn btn-green" style="padding:2px 5px; font-size:10px">RESTORE</button>
+                <button onclick="hardDelete(${d.id_2b6})" class="btn btn-red" style="padding:2px 5px; font-size:10px">PERMANENT</button>
+            </div>
+        `).join('');
+    }
+
+    async function softDelete(id) { if(confirm("Soft Delete ID:"+id+"?")) { await fetch(`${API}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); fetchAll(); } }
+    async function restore(id) { await fetch(`${API}/restore/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); fetchAll(); loadTrash(); }
+    async function hardDelete(id) { if(confirm("Hard Delete ID:"+id+"?")) { await fetch(`${API}/hard/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadTrash(); } }
+    function tembakExport() { window.open(`${API}/export?id_prodi=${document.getElementById('f_prodi').value}&id_tahun=${document.getElementById('f_tahun').value}&token=${token}`); }
+</script>
+</body>
+</html>

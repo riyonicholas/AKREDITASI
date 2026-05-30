@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uji Coba 1.A.2 Sumber Pendanaan</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f8f9fa; color: #333; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header-section { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 15px; margin-bottom: 25px; }
+        .section { background: #fdfdfd; border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 20px; border-radius: 8px; }
+        h3 { margin-top: 0; color: #2c3e50; border-left: 4px solid #007bff; padding-left: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: center; }
+        th { background: #BFBFBF; font-weight: bold; color: #212529; }
+        .row-data { background: #FFFF00; }
+        
+        input, select { padding: 10px; margin: 5px 0; border: 1px solid #ced4da; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        .grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        
+        button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+        button:hover { opacity: 0.8; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-warning { background: #ffc107; color: #212529; }
+        .btn-info { background: #17a2b8; color: white; }
+
+        .trash-area { border: 2px dashed #dc3545; background-color: #fff5f5; margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h2>Dashboard Tabel 1.A.2: Sumber Pendanaan UPPS/PS</h2>
+        <button onclick="exportExcel()" class="btn-warning">📥 Export Excel LKPS</button>
+    </div>
+
+    <!-- 1. AUTH & GLOBAL FILTER -->
+    <div class="section">
+        <h3>1. Autentikasi & Filter Global</h3>
+        <div class="grid-form">
+            <div>
+                <label>Username:</label>
+                <input type="text" id="username" placeholder="Masukkan Username">
+            </div>
+            <div>
+                <label>Password:</label>
+                <input type="password" id="password" placeholder="Masukkan Password">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button onclick="login()" class="btn-primary" style="width: 100%;">Login ke Sistem</button>
+            </div>
+        </div>
+        <hr style="margin: 20px 0;">
+        <div class="grid-form">
+            <div>
+                <label>Pilih Prodi (Filter):</label>
+                <input type="number" id="f_prodi" value="1">
+            </div>
+            <div>
+                <label>Tahun Akademik (TS):</label>
+                <input type="number" id="f_tahun" value="3">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button onclick="refreshSemua()" class="btn-info" style="width: 100%;">Muat Data & Trash</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. FORM TRANSAKSI -->
+    <div class="section">
+        <h3 id="form-title">2. Input / Edit Sumber Pendanaan</h3>
+        <input type="hidden" id="id_sumber">
+        <div class="grid-form">
+            <div>
+                <label>Nama Sumber:</label>
+                <input type="text" id="nama_sumber" placeholder="Contoh: Mahasiswa (SPP)">
+            </div>
+            <div>
+                <label>Jumlah Dana (Jutaan):</label>
+                <input type="number" id="jumlah_dana" placeholder="Hanya angka (misal: 1500)">
+            </div>
+            <div>
+                <label>Link Bukti:</label>
+                <input type="text" id="link_bukti" placeholder="Link Drive/URL">
+            </div>
+            <div>
+                <label>Tahun Record:</label>
+                <input type="number" id="id_tahun_entry" placeholder="Tahun (e.g. 1, 2, atau 3)">
+            </div>
+        </div>
+        <div style="margin-top: 15px;">
+            <button onclick="simpanData()" id="btn-submit" class="btn-success">💾 Simpan Data</button>
+            <button onclick="resetForm()" class="btn-info">🔄 Reset Form</button>
+        </div>
+    </div>
+
+    <!-- 3. DATA AKTIF (PIVOTED VIEW) -->
+    <h3>3. Tampilan LKPS (Data Aktif)</h3>
+    <table id="tabel-aktif">
+        <thead>
+            <tr>
+                <th rowspan="2">Sumber Pendanaan</th>
+                <th colspan="3">Jumlah Dana (Jutaan Rupiah)</th>
+                <th rowspan="2">Link Bukti</th>
+                <th rowspan="2">Aksi</th>
+            </tr>
+            <tr>
+                <th id="th-ts2">TS-2</th>
+                <th id="th-ts1">TS-1</th>
+                <th id="th-ts">TS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="6">Silakan login dan muat data...</td></tr>
+        </tbody>
+    </table>
+    <p style="font-style: italic; font-size: 0.9em; color: #666;">*Keterangan: Data ditampilkan dalam format horizontal (Pivot) berdasarkan Nama Sumber.</p>
+
+    <!-- 4. TEMPAT SAMPAH -->
+    <div class="section trash-area">
+        <h3 style="color: #dc3545; border-left-color: #dc3545;">🗑️ Tempat Sampah (Soft Deleted)</h3>
+        <table id="tabel-sampah">
+            <thead>
+                <tr>
+                    <th>Sumber</th>
+                    <th>Jumlah</th>
+                    <th>Tahun</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:5000/api/keuangan/1a2-sumber-pendanaan';
+    let token = localStorage.getItem('token') || '';
+
+    async function login() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        const res = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, password: p })
+        });
+        const d = await res.json();
+        if(d.success) {
+            token = d.token;
+            localStorage.setItem('token', token);
+            alert("Login Berhasil!");
+            refreshSemua();
+        } else {
+            alert("Gagal Login: " + d.message);
+        }
+    }
+
+    function refreshSemua() {
+        if(!token) return alert("Silakan login terlebih dahulu!");
+        fetchDataAktif();
+        fetchTrash();
+    }
+
+    async function fetchDataAktif() {
+        const prodi = document.getElementById('f_prodi').value;
+        const ts = parseInt(document.getElementById('f_tahun').value);
+        
+        // Update Header Label
+        document.getElementById('th-ts').innerText = `TS (${ts})`;
+        document.getElementById('th-ts1').innerText = `TS-1 (${ts-1})`;
+        document.getElementById('th-ts2').innerText = `TS-2 (${ts-2})`;
+
+        const res = await fetch(`${API_BASE}?id_prodi=${prodi}&id_tahun=${ts}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+
+        if(result.success) {
+            // Logika Pivot Data di Frontend
+            const pivot = {};
+            result.data.forEach(item => {
+                if(!pivot[item.nama_sumber]) {
+                    pivot[item.nama_sumber] = { ts2: 0, ts1: 0, ts: 0, link: item.link_bukti, raw: [] };
+                }
+                if(item.id_tahun == ts) pivot[item.nama_sumber].ts = item.jumlah_dana;
+                else if(item.id_tahun == ts - 1) pivot[item.nama_sumber].ts1 = item.jumlah_dana;
+                else if(item.id_tahun == ts - 2) pivot[item.nama_sumber].ts2 = item.jumlah_dana;
+                
+                // Simpan data raw untuk keperluan edit/hapus
+                pivot[item.nama_sumber].raw.push(item);
+            });
+
+            const tbody = document.querySelector('#tabel-aktif tbody');
+            tbody.innerHTML = Object.keys(pivot).length ? Object.keys(pivot).map(s => `
+                <tr class="row-data">
+                    <td style="text-align: left; font-weight: bold;">${s}</td>
+                    <td>${pivot[s].ts2 || '-'}</td>
+                    <td>${pivot[s].ts1 || '-'}</td>
+                    <td>${pivot[s].ts || '-'}</td>
+                    <td><a href="${pivot[s].link}" target="_blank">Buka Link</a></td>
+                    <td>
+                        <button onclick='manageData(${JSON.stringify(pivot[s].raw)})' class="btn-info" style="font-size: 11px;">Kelola</button>
+                    </td>
+                </tr>
+            `).join('') : '<tr><td colspan="6">Tidak ada data untuk filter ini.</td></tr>';
+        }
+    }
+
+    async function fetchTrash() {
+        const prodi = document.getElementById('f_prodi').value;
+        const ts = document.getElementById('f_tahun').value;
+        const res = await fetch(`${API_BASE}/trash?id_prodi=${prodi}&id_tahun=${ts}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const result = await res.json();
+        const tbody = document.querySelector('#tabel-trash tbody');
+        if(result.success) {
+            tbody.innerHTML = result.data.map(d => `
+                <tr>
+                    <td>${d.nama_sumber}</td>
+                    <td>${d.jumlah_dana}</td>
+                    <td>${d.nama_tahun}</td>
+                    <td>
+                        <button onclick="restoreData(${d.id_sumber})" class="btn-success">Restore</button>
+                        <button onclick="hardDelete(${d.id_sumber})" class="btn-danger">Hapus Permanen</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    }
+
+    async function simpanData() {
+        const id = document.getElementById('id_sumber').value;
+        const body = {
+            id_prodi: document.getElementById('f_prodi').value,
+            nama_sumber: document.getElementById('nama_sumber').value,
+            jumlah_dana: document.getElementById('jumlah_dana').value,
+            link_bukti: document.getElementById('link_bukti').value,
+            id_tahun: document.getElementById('id_tahun_entry').value
+        };
+
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API_BASE}/${id}` : API_BASE;
+
+        const res = await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(body)
+        });
+        const r = await res.json();
+        alert(r.message);
+        resetForm();
+        refreshSemua();
+    }
+
+    function manageData(rawList) {
+        // Fungsi sederhana untuk memilih data mana yang mau diedit/dihapus dari satu baris pivot
+        const msg = rawList.map((d, i) => `${i+1}. ${d.nama_sumber} Tahun ${d.id_tahun} (${d.jumlah_dana} Juta)`).join('\n');
+        const choice = prompt(`Pilih nomor data untuk dikelola:\n${msg}\n\nKetik 'E' diikuti nomor untuk EDIT (Contoh: E1)\nKetik 'H' diikuti nomor untuk HAPUS (Contoh: H1)`);
+        
+        if(!choice) return;
+        const action = choice[0].toUpperCase();
+        const index = parseInt(choice.substring(1)) - 1;
+        const selected = rawList[index];
+
+        if(action === 'E') {
+            document.getElementById('id_sumber').value = selected.id_sumber;
+            document.getElementById('nama_sumber').value = selected.nama_sumber;
+            document.getElementById('jumlah_dana').value = selected.jumlah_dana;
+            document.getElementById('link_bukti').value = selected.link_bukti;
+            document.getElementById('id_tahun_entry').value = selected.id_tahun;
+            document.getElementById('btn-submit').innerText = "🆙 Update Data";
+            document.getElementById('form-title').innerText = "Edit Data ID: " + selected.id_sumber;
+            window.scrollTo(0, 300);
+        } else if(action === 'H') {
+            softDelete(selected.id_sumber);
+        }
+    }
+
+    async function softDelete(id) {
+        if(confirm("Pindahkan data ini ke tempat sampah?")) {
+            await fetch(`${API_BASE}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            refreshSemua();
+        }
+    }
+
+    async function restoreData(id) {
+        await fetch(`${API_BASE}/restore/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+        refreshSemua();
+    }
+
+    async function hardDelete(id) {
+        if(confirm("HAPUS PERMANEN? Data ini akan hilang selamanya dari database!")) {
+            await fetch(`${API_BASE}/hard/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            refreshSemua();
+        }
+    }
+
+    function resetForm() {
+        document.getElementById('id_sumber').value = '';
+        document.getElementById('nama_sumber').value = '';
+        document.getElementById('jumlah_dana').value = '';
+        document.getElementById('link_bukti').value = '';
+        document.getElementById('btn-submit').innerText = "💾 Simpan Data";
+        document.getElementById('form-title').innerText = "2. Input / Edit Sumber Pendanaan";
+    }
+
+    function exportExcel() {
+        const prodi = document.getElementById('f_prodi').value;
+        const ts = document.getElementById('f_tahun').value;
+        window.open(`${API_BASE}/export?id_prodi=${prodi}&id_tahun=${ts}&token=${token}`);
+    }
+</script>
+
+</body>
+</html>

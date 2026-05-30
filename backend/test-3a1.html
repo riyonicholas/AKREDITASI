@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Uji Coba 3.A.1 Sarana Prasarana</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f8f9fa; }
+        .box { background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #444; padding: 10px; text-align: center; }
+        th { background: #BFBFBF; font-weight: bold; }
+        .row-kuning { background: #FFFF00; }
+        input, select, textarea { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="box">
+        <h1>Dashboard Sarpras: Tabel 3.A.1</h1>
+        <div class="grid">
+            <div>
+                <input type="text" id="u" placeholder="Username (SARPRAS)">
+                <input type="password" id="p" placeholder="Password">
+                <button onclick="login()" class="btn-primary">Login Sistem</button>
+            </div>
+            <div>
+                <label>Filter Prodi:</label>
+                <input type="number" id="f_prodi" value="1">
+                <button onclick="refreshData()" class="btn-success">🔄 Muat Data</button>
+                <button onclick="exportExcel()" class="btn-warning">📥 Download Excel LKPS</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="box">
+        <h3>Input Data Inventaris Laboratorium</h3>
+        <input type="hidden" id="id_3a1">
+        <div class="grid">
+            <input type="text" id="nama_prasarana" placeholder="Nama Laboratorium">
+            <input type="number" id="daya_tampung" placeholder="Daya Tampung">
+            <input type="number" id="luas_ruang" step="0.01" placeholder="Luas Ruang (m2)">
+            <select id="status_milik">
+                <option value="M">Milik Sendiri (M)</option>
+                <option value="W">Sewa (W)</option>
+            </select>
+            <select id="status_lisensi">
+                <option value="L">Berlisensi (L)</option>
+                <option value="P">Public Domain (P)</option>
+                <option value="T">Tidak Berlisensi (T)</option>
+            </select>
+            <input type="text" id="link_bukti" placeholder="Link Bukti">
+        </div>
+        <textarea id="perangkat" placeholder="Daftar Perangkat (Hard/Soft, Bandwidth, Tool, dll)"></textarea>
+        <input type="text" id="info_tambahan" placeholder="Kegunaan / Info Tambahan (Kolom .....)">
+        <button onclick="simpanData()" id="btn-save" class="btn-primary">💾 Simpan Data</button>
+        <button onclick="resetForm()">Batal</button>
+    </div>
+
+    <h3>Preview Tabel LKPS 3.A.1</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Nama Prasarana</th>
+                <th>Daya Tampung</th>
+                <th>Luas (m2)</th>
+                <th>Milik (M/W)</th>
+                <th>Lisensi (L/P/T)</th>
+                <th>Perangkat</th>
+                <th>.....</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="body-aktif"></tbody>
+    </table>
+
+    <div class="box" style="margin-top: 50px; border: 2px dashed #dc3545;">
+        <h3 style="color: #dc3545;">🗑️ Recycle Bin (Trash)</h3>
+        <table id="table-trash">
+            <thead>
+                <tr>
+                    <th>Nama Prasarana</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+<script>
+    const API = 'http://localhost:5000/api/sarpras/3a1-sarana-prasarana';
+    let token = localStorage.getItem('token') || '';
+
+    async function login() {
+        const res = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value })
+        });
+        const d = await res.json();
+        if(d.success) { token = d.token; localStorage.setItem('token', token); alert("Login Sarpras Berhasil!"); refreshData(); }
+    }
+
+    function refreshData() { ambilAktif(); ambilTrash(); }
+
+    async function ambilAktif() {
+        const pid = document.getElementById('f_prodi').value;
+        const res = await fetch(`${API}?id_prodi=${pid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const result = await res.json();
+        const body = document.getElementById('body-aktif');
+        body.innerHTML = result.data.map(d => `
+            <tr class="row-kuning">
+                <td>${d.nama_prasarana}</td>
+                <td>${d.daya_tampung}</td>
+                <td>${d.luas_ruang}</td>
+                <td>${d.status_milik}</td>
+                <td>${d.status_lisensi}</td>
+                <td>${d.perangkat}</td>
+                <td>${d.info_tambahan}</td>
+                <td>
+                    <button onclick='isiEdit(${JSON.stringify(d)})' class="btn-warning">Edit</button>
+                    <button onclick="hapusSoft(${d.id_3a1})" class="btn-danger">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function ambilTrash() {
+        const pid = document.getElementById('f_prodi').value;
+        const res = await fetch(`${API}/trash?id_prodi=${pid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const result = await res.json();
+        const tbody = document.querySelector('#table-trash tbody');
+        tbody.innerHTML = result.data.map(d => `
+            <tr>
+                <td>${d.nama_prasarana}</td>
+                <td>
+                    <button onclick="restore(${d.id_3a1})" class="btn-success">Restore</button>
+                    <button onclick="hard(${d.id_3a1})" class="btn-danger">Hapus Permanen</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function simpanData() {
+        const id = document.getElementById('id_3a1').value;
+        const body = {
+            id_prodi: document.getElementById('f_prodi').value,
+            nama_prasarana: document.getElementById('nama_prasarana').value,
+            daya_tampung: document.getElementById('daya_tampung').value,
+            luas_ruang: document.getElementById('luas_ruang').value,
+            status_milik: document.getElementById('status_milik').value,
+            status_lisensi: document.getElementById('status_lisensi').value,
+            perangkat: document.getElementById('perangkat').value,
+            info_tambahan: document.getElementById('info_tambahan').value,
+            link_bukti: document.getElementById('link_bukti').value
+        };
+        const method = id ? 'PUT' : 'POST';
+        const url = id ? `${API}/${id}` : API;
+        await fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(body)
+        });
+        resetForm(); refreshData();
+    }
+
+    function isiEdit(d) {
+        document.getElementById('id_3a1').value = d.id_3a1;
+        document.getElementById('nama_prasarana').value = d.nama_prasarana;
+        document.getElementById('daya_tampung').value = d.daya_tampung;
+        document.getElementById('luas_ruang').value = d.luas_ruang;
+        document.getElementById('status_milik').value = d.status_milik;
+        document.getElementById('status_lisensi').value = d.status_lisensi;
+        document.getElementById('perangkat').value = d.perangkat;
+        document.getElementById('info_tambahan').value = d.info_tambahan;
+        document.getElementById('link_bukti').value = d.link_bukti;
+        document.getElementById('btn-save').innerText = "Update Data";
+    }
+
+    async function hapusSoft(id) {
+        if(confirm("Hapus?")) { await fetch(`${API}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); refreshData(); }
+    }
+
+    async function restore(id) { await fetch(`${API}/restore/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); refreshData(); }
+
+    async function hard(id) {
+        if(confirm("Hapus Permanen?")) { await fetch(`${API}/hard/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); refreshData(); }
+    }
+
+    function resetForm() { document.getElementById('id_3a1').value = ''; document.getElementById('btn-save').innerText = "Simpan Data"; }
+
+    function exportExcel() {
+        const pid = document.getElementById('f_prodi').value;
+        window.open(`${API}/export?id_prodi=${pid}&token=${token}`);
+    }
+</script>
+</body>
+</html>

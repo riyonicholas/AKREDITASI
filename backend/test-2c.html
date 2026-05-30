@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-Akreditasi 2.C - Fleksibilitas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2); }
+        .borang-table { width: 100%; border-collapse: separate; border-spacing: 0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .borang-table th { background: #cbd5e1; padding: 12px; text-align: center; font-size: 10px; font-weight: 900; color: #334155; text-transform: uppercase; border: 1px solid #e2e8f0; }
+        .borang-table td { padding: 12px; border: 1px solid #e2e8f0; font-size: 11px; }
+        .row-label { background: #f1f5f9; font-weight: 700; color: #475569; }
+        .cell-data { text-align: center; font-weight: 700; color: #2563eb; }
+        .cell-link { font-style: italic; color: #64748b; font-size: 10px; }
+    </style>
+</head>
+<body class="p-8">
+    <div id="login-section" class="max-w-md mx-auto mt-20 glass p-10 rounded-3xl shadow-2xl">
+        <h1 class="text-3xl font-black mb-8 text-slate-800">LOGIN SI-AKREDITASI</h1>
+        <input type="text" id="username" placeholder="Username" class="w-full p-4 mb-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+        <input type="password" id="password" placeholder="Password" class="w-full p-4 mb-8 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500">
+        <button onclick="handleLogin()" class="w-full bg-blue-600 text-white p-4 rounded-2xl font-black shadow-lg shadow-blue-200">MASUK KE SISTEM</button>
+    </div>
+
+    <div id="main-section" class="hidden">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex justify-between items-center mb-10">
+                <div>
+                    <h2 class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Akreditasi Program Studi</h2>
+                    <h1 class="text-3xl font-black text-slate-800 uppercase">Tabel 2.C Fleksibilitas Pembelajaran</h1>
+                </div>
+                <button onclick="handleLogout()" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-[10px] font-bold uppercase">Logout</button>
+            </div>
+
+            <!-- BORANG TABLE SECTION -->
+            <div class="glass p-8 rounded-[32px] shadow-xl mb-10">
+                <div class="flex justify-between items-center mb-8">
+                    <div class="flex gap-4">
+                        <select id="filter_prodi" onchange="loadData()" class="p-4 bg-slate-50 border-none rounded-2xl text-[11px] font-black uppercase text-slate-600 outline-none focus:ring-2 focus:ring-blue-500"></select>
+                        <select id="filter_tahun_ts" onchange="loadData()" class="p-4 bg-slate-50 border-none rounded-2xl text-[11px] font-black uppercase text-blue-600 outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">-- PILIH TAHUN TS --</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-4">
+                        <button onclick="exportExcel()" class="bg-emerald-500 text-white px-8 py-3 rounded-2xl text-[10px] font-black shadow-lg shadow-emerald-100 uppercase tracking-widest">Export Excel</button>
+                        <button onclick="showForm()" class="bg-blue-600 text-white px-10 py-3 rounded-2xl text-[10px] font-black shadow-lg shadow-blue-100 uppercase tracking-widest">+ Tambah Data</button>
+                    </div>
+                </div>
+                
+                <div id="borang-container">
+                    <!-- Borang table injected here -->
+                </div>
+            </div>
+
+            <!-- HISTORY SECTION -->
+            <div class="glass p-8 rounded-[32px] shadow-xl">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Riwayat Penginputan</h3>
+                    <button onclick="loadTrash()" class="text-red-500 text-[10px] font-black uppercase">Sampah (<span id="trash-count">0</span>)</button>
+                </div>
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                            <th class="p-5 text-left">No</th>
+                            <th class="p-5 text-left">Prodi</th>
+                            <th class="p-5 text-left text-center">Tahun</th>
+                            <th class="p-5 text-left">Bentuk</th>
+                            <th class="p-5 text-center">Jumlah</th>
+                            <th class="p-5 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="main-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FORM -->
+    <div id="modal-form" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="glass w-full max-w-xl p-10 rounded-[40px] shadow-2xl relative">
+            <h3 id="modal-title" class="text-2xl font-black mb-8 text-slate-800">TAMBAH DATA</h3>
+            <input type="hidden" id="id_2c">
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="col-span-2">
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Program Studi</label>
+                    <select id="id_prodi" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Tahun Akademik</label>
+                    <select id="id_tahun" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Bentuk Pembelajaran</label>
+                    <select id="id_bentuk" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Jumlah Mahasiswa</label>
+                <input type="number" id="jumlah_mhs" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="0">
+            </div>
+            <div class="mb-8">
+                <label class="text-[10px] font-black text-slate-400 uppercase ml-2 mb-2 block">Link Bukti (URL)</label>
+                <input type="text" id="link_bukti" class="w-full p-4 bg-slate-50 border-none rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://...">
+            </div>
+            <div class="flex gap-4">
+                <button onclick="hideForm()" class="flex-1 p-4 rounded-2xl font-black text-slate-400 uppercase text-[12px]">Batal</button>
+                <button onclick="saveData()" class="flex-1 bg-blue-600 text-white p-4 rounded-2xl font-black shadow-lg shadow-blue-200 uppercase text-[12px]">Simpan Data</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api/prodi/2c-fleksibilitas';
+        let session = null;
+        let currentMhsLimits = {};
+
+        async function handleLogin() {
+            const u = document.getElementById('username').value;
+            const p = document.getElementById('password').value;
+            const res = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: u, password: p })
+            });
+            const result = await res.json();
+            if (result.success) {
+                session = result;
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('main-section').classList.remove('hidden');
+                loadData();
+            } else alert(result.message);
+        }
+
+        function handleLogout() { location.reload(); }
+
+        async function loadData() {
+            const id_prodi = document.getElementById('filter_prodi').value;
+            const id_tahun_ts = document.getElementById('filter_tahun_ts').value;
+            const res = await fetch(`${API_URL}?id_prodi=${id_prodi}&id_tahun_ts=${id_tahun_ts}`, { 
+                headers: { 'Authorization': `Bearer ${session.token}` } 
+            });
+            const result = await res.json();
+            if (result.success) {
+                currentMhsLimits = {};
+                result.borang.mhsAktif.forEach(m => { currentMhsLimits[m.id_tahun] = m.total_aktif; });
+
+                if(document.getElementById('filter_prodi').innerHTML === "") {
+                    const prodiOpt = `<option value="">-- PILIH PRODI --</option>` + result.master.prodi.map(p => `<option value="${p.id_prodi}">${p.nama_prodi}</option>`).join('');
+                    const tahunOpt = result.master.tahun.map(t => `<option value="${t.id_tahun}">${t.tahun}</option>`).join('');
+                    const tsOpt = `<option value="">-- TAHUN TS (LATEST) --</option>` + tahunOpt;
+                    document.getElementById('filter_prodi').innerHTML = prodiOpt;
+                    document.getElementById('id_prodi').innerHTML = prodiOpt;
+                    document.getElementById('id_tahun').innerHTML = tahunOpt;
+                    document.getElementById('filter_tahun_ts').innerHTML = tsOpt;
+                    document.getElementById('id_bentuk').innerHTML = result.master.bentuk.map(b => `<option value="${b.id_bentuk}">${b.nama_bentuk}</option>`).join('');
+                }
+                renderBorangTable(result.borang, result.data);
+                renderHistoryTable(result.data);
+                loadTrashCount();
+            }
+        }
+
+        function renderBorangTable(borang, data) {
+            const { tahunHeaders, barisBentuk, mhsAktif } = borang;
+            let h1 = `<tr><th rowspan="2" class="w-[30%]">Tahun Akademik</th>`;
+            tahunHeaders.forEach(t => {
+                const label = (tahunHeaders.indexOf(t) === 2) ? 'TS' : `TS-${2 - tahunHeaders.indexOf(t)}`;
+                h1 += `<th class="p-4">${t.tahun} (${label})</th>`;
+            });
+            h1 += `<th rowspan="2" class="w-[20%]">Link Bukti</th></tr>`;
+            
+            let bodyHtml = `<tr><td class="row-label font-black pl-5">Jumlah Mahasiswa Aktif</td>`;
+            tahunHeaders.forEach(th => {
+                const found = mhsAktif.find(m => m.id_tahun === th.id_tahun);
+                bodyHtml += `<td class="cell-data bg-blue-50/30">${found ? found.total_aktif : 0}</td>`;
+            });
+            bodyHtml += `<td class="bg-blue-50/30"></td></tr>`;
+
+            bodyHtml += `<tr><td colspan="${tahunHeaders.length + 2}" class="p-3 bg-slate-100 font-black text-[9px] uppercase tracking-widest text-slate-500">Bentuk Pembelajaran (Jumlah Mhs untuk setiap bentuk)</td></tr>`;
+
+            let totalPerTahun = tahunHeaders.map(() => 0);
+            barisBentuk.forEach(b => {
+                bodyHtml += `<tr><td class="row-label font-normal pl-8 text-slate-500">${b.nama_bentuk}</td>`;
+                let links = [];
+                tahunHeaders.forEach((th, idx) => {
+                    const found = data.find(d => d.id_bentuk === b.id_bentuk && d.id_tahun === th.id_tahun);
+                    const val = found ? found.jumlah_mhs : 0;
+                    bodyHtml += `<td class="cell-data">${val}</td>`;
+                    totalPerTahun[idx] += val;
+                    if (found && found.link_bukti && found.link_bukti !== '-') {
+                        links.push(`<a href="${found.link_bukti}" target="_blank" class="block truncate max-w-[150px] text-blue-500 underline">${found.link_bukti}</a>`);
+                    }
+                });
+                bodyHtml += `<td class="cell-link">${links.length > 0 ? links.join('') : '-'}</td></tr>`;
+            });
+
+            bodyHtml += `<tr class="bg-slate-50 font-bold"><td class="p-4 font-black uppercase text-[10px]">Jumlah</td>`;
+            totalPerTahun.forEach(v => bodyHtml += `<td class="cell-data text-emerald-600">${v}</td>`);
+            bodyHtml += `<td></td></tr>`;
+
+            bodyHtml += `<tr class="bg-slate-50 font-bold"><td class="p-4 font-black uppercase text-[10px]">Persentase</td>`;
+            totalPerTahun.forEach((v, idx) => {
+                const active = mhsAktif.find(m => m.id_tahun === tahunHeaders[idx].id_tahun);
+                const pct = (active && active.total_aktif > 0) ? (v / active.total_aktif * 100).toFixed(2) : 0;
+                bodyHtml += `<td class="cell-data text-blue-600">${pct}%</td>`;
+            });
+            bodyHtml += `<td></td></tr>`;
+
+            document.getElementById('borang-container').innerHTML = `<table class="borang-table"><thead>${h1}</thead><tbody>${bodyHtml}</tbody></table>`;
+        }
+
+        function renderHistoryTable(data) {
+            document.getElementById('main-tbody').innerHTML = data.map((r, idx) => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50 transition">
+                    <td class="p-5 text-slate-300 font-bold">${idx + 1}</td>
+                    <td class="p-5 text-left font-bold text-blue-600">${r.nama_prodi}</td>
+                    <td class="p-5 text-center font-black text-slate-400 text-[10px]">${r.tahun}</td>
+                    <td class="p-5 text-left font-medium text-slate-600">${r.nama_bentuk}</td>
+                    <td class="p-5 text-center font-black text-slate-700">${r.jumlah_mhs}</td>
+                    <td class="p-5 text-center">
+                        <button onclick="editData(${r.id_2c})" class="text-blue-500 font-bold text-[10px] uppercase mr-3">Edit</button>
+                        <button onclick="deleteData(${r.id_2c})" class="text-red-400 font-bold text-[10px] uppercase">Hapus</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showForm() { document.getElementById('modal-form').classList.remove('hidden'); }
+        function hideForm() { 
+            document.getElementById('modal-form').classList.add('hidden'); 
+            document.getElementById('id_2c').value = '';
+            document.getElementById('jumlah_mhs').value = '';
+            document.getElementById('link_bukti').value = '';
+            document.getElementById('modal-title').innerText = "TAMBAH DATA";
+        }
+
+        async function saveData() {
+            const id = document.getElementById('id_2c').value;
+            const id_tahun = document.getElementById('id_tahun').value;
+            const jumlah_mhs = parseInt(document.getElementById('jumlah_mhs').value);
+            
+            if (currentMhsLimits[id_tahun] !== undefined) {
+                const limit = currentMhsLimits[id_tahun];
+                if (jumlah_mhs > limit) {
+                    alert(`Gagal! Jumlah mahasiswa (${jumlah_mhs}) tidak boleh melebihi total mahasiswa aktif (${limit}) di tabel 2.A.1.`);
+                    return;
+                }
+            }
+
+            const data = {
+                id_prodi: document.getElementById('id_prodi').value,
+                id_tahun: id_tahun,
+                id_bentuk: document.getElementById('id_bentuk').value,
+                jumlah_mhs: jumlah_mhs,
+                link_bukti: document.getElementById('link_bukti').value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/${id}` : API_URL;
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (result.success) { hideForm(); loadData(); } else alert(result.message);
+        }
+
+        async function editData(id) {
+            const res = await fetch(`${API_URL}/${id}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+            const result = await res.json();
+            if (result.success) {
+                const d = result.data;
+                document.getElementById('id_2c').value = d.id_2c;
+                document.getElementById('id_prodi').value = d.id_prodi;
+                document.getElementById('id_tahun').value = d.id_tahun;
+                document.getElementById('id_bentuk').value = d.id_bentuk;
+                document.getElementById('jumlah_mhs').value = d.jumlah_mhs;
+                document.getElementById('link_bukti').value = d.link_bukti;
+                document.getElementById('modal-title').innerText = "EDIT DATA";
+                showForm();
+            }
+        }
+
+        async function deleteData(id) { if(confirm("Hapus data ini?")) { await fetch(`${API_URL}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${session.token}` } }); loadData(); } }
+        async function loadTrash() { /* Implementation for Trash if needed */ }
+        async function loadTrashCount() { const res = await fetch(`${API_URL}/trash`, { headers: { 'Authorization': `Bearer ${session.token}` } }); const result = await res.json(); document.getElementById('trash-count').innerText = result.data.length; }
+        
+        function exportExcel() { 
+            const p = document.getElementById('filter_prodi').value; 
+            const ts = document.getElementById('filter_tahun_ts').value;
+            window.open(`${API_URL}/export?id_prodi=${p}&id_tahun_ts=${ts}&token=${session.token}`, '_blank'); 
+        }
+    </script>
+</body>
+</html>

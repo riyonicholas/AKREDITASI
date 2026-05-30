@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-Akreditasi 2.A.3 - Kondisi Jumlah Mahasiswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        th, td { border: 1px solid #94a3b8; padding: 12px 10px; text-align: center; word-wrap: break-word; }
+        th { background-color: #bfbfbf; color: #0f172a; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .bg-gray-lkps { background-color: #bfbfbf; font-weight: 800; color: #1e293b; }
+        .bg-yellow-lkps { background-color: #ffff00; font-weight: 700; color: #000000; }
+
+        .input-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 16px; }
+        .field-label { font-size: 0.6rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        
+        .auth-locked { position: relative; }
+        .auth-locked::after { content: "Silahkan Login (Role ALA/ADMIN) untuk Input Data"; position: absolute; inset: 0; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 40; font-size: 0.7rem; font-weight: 800; color: #1e293b; text-transform: uppercase; border-radius: 2rem; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-900">
+
+    <div class="max-w-[98%] mx-auto p-4">
+        
+        <!-- TOP NAVIGATION & LOGIN BAR -->
+        <header class="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4 px-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg">ST</div>
+                <div>
+                    <h1 class="text-sm font-black uppercase tracking-tighter">SI-Akreditasi 2.A.3</h1>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Unit Pengelola: ALA & Admin</p>
+                </div>
+            </div>
+
+            <!-- Header Login Section -->
+            <div id="login-section" class="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                <input type="text" id="login-user" placeholder="Username" class="bg-white border p-2 rounded-xl text-[10px] w-28 outline-none font-bold uppercase">
+                <input type="password" id="login-pass" placeholder="Password" class="bg-white border p-2 rounded-xl text-[10px] w-28 outline-none font-bold uppercase">
+                <button onclick="handleLogin()" id="btn-login" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition">Masuk</button>
+            </div>
+
+            <!-- User Info -->
+            <div id="user-section" class="hidden flex items-center gap-6">
+                <div class="text-right">
+                    <p id="display-role" class="text-[10px] font-black text-blue-600 uppercase">GUEST</p>
+                    <button onclick="handleLogout()" class="text-[9px] font-bold text-red-400 hover:text-red-600 uppercase">Keluar</button>
+                </div>
+                <!-- Tombol Trash -->
+                <button onclick="openTrashModal()" class="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-100 transition relative">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Trash <span id="trash-count" class="bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[8px]">0</span>
+                </button>
+                <button onclick="exportExcel()" class="bg-green-600 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-700 shadow-lg shadow-green-100">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Export Excel
+                </button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD GRID -->
+        <div class="grid grid-cols-12 gap-6">
+            
+            <!-- LEFT: INPUT FORM -->
+            <div class="col-span-12 lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-200">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">ID Prodi</label>
+                            <input type="number" id="id_prodi" onchange="loadData()" value="1" min="1" class="w-full p-3 border rounded-xl text-xs font-black bg-slate-50 outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="field-label">Tahun Akademik (TS)</label>
+                            <select id="id_tahun" onchange="loadData()" class="w-full p-3 border rounded-xl text-xs font-black bg-blue-50 text-blue-600 outline-none">
+                                <option value="">Memuat Tahun...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="form-wrapper" class="auth-locked">
+                    <form id="main-form" class="space-y-4">
+                        <div id="input-container" class="space-y-4">
+                            <!-- Input dinamis untuk angkatan berjalan (TS) digenerate di sini -->
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-3">
+                            <button type="button" onclick="saveData()" class="col-span-2 bg-blue-600 text-white py-5 rounded-[1.5rem] font-black text-xs tracking-widest uppercase shadow-2xl shadow-blue-100 hover:bg-blue-700 transition">
+                                Simpan & Sinkron
+                            </button>
+                            <button type="button" onclick="confirmSoftDelete()" class="col-span-1 bg-red-50 text-red-600 border border-red-200 py-5 rounded-[1.5rem] font-black text-xs tracking-widest uppercase hover:bg-red-600 hover:text-white transition">
+                                Hapus
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- RIGHT: TABLE PREVIEW (PRESISI KUNING-ABU BAN-PT) -->
+            <div class="col-span-12 lg:col-span-8">
+                <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100 flex justify-between items-center">
+                        <h2 class="text-xl font-black text-slate-800 tracking-tighter uppercase">Laporan Kondisi Jumlah Mahasiswa</h2>
+                        <span class="text-[10px] font-black bg-blue-100 text-blue-600 px-3 py-1 rounded-full uppercase tracking-widest">Otoritas ALA</span>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="overflow-x-auto rounded-2xl border border-slate-200">
+                            <table id="main-table">
+                                <thead>
+                                    <tr>
+                                        <th class="w-[40%] text-left px-8">Kondisi Retensi</th>
+                                        <th class="w-[12%]">TS-2</th>
+                                        <th class="w-[12%]">TS-1</th>
+                                        <th class="w-[12%] bg-slate-400">TS</th>
+                                        <th class="w-[12%]">Jumlah</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="bg-white">
+                                    <!-- Rows map 100% to image_094d63.png -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alert -->
+    <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2.5rem] max-w-sm w-full p-10 shadow-2xl border-t-8 border-red-600">
+            <h3 class="text-xl font-black text-slate-800 text-center mb-2 uppercase tracking-tighter" id="alert-title">Peringatan!</h3>
+            <p id="alert-text" class="text-[10px] text-slate-500 text-center font-bold leading-relaxed mb-10 uppercase"></p>
+            <div class="flex flex-col gap-2">
+                <button id="alert-btn-confirm" class="hidden w-full bg-red-600 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-red-700 transition">Ya, Hapus</button>
+                <button onclick="document.getElementById('modal-alert').classList.add('hidden')" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Trash Bin -->
+    <div id="modal-trash" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2.5rem] max-w-2xl w-full p-10 shadow-2xl border-t-8 border-slate-800">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter">Trash Bin Tabel 2.A.3</h3>
+                <button onclick="closeTrashModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+            <div class="overflow-y-auto max-h-[50vh] rounded-xl border border-slate-100">
+                <table class="w-full text-xs text-center">
+                    <thead>
+                        <tr class="bg-slate-100 text-[10px] font-black uppercase text-slate-500 tracking-widest border-b">
+                            <th class="py-3">Tahun Akademik</th>
+                            <th class="py-3">Hapus Pada</th>
+                            <th class="py-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trash-tbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/api";
+        const API_2A3 = "http://localhost:5000/api/ala/2a3-kondisi-mahasiswa";
+        
+        let session = { token: null, unit: null, userId: null, username: null };
+        let isLoggedIn = false;
+        
+        // State data 3 angkatan yang diload dari backend
+        let activeCohorts = {
+            ts: { id_tahun: 0, tahun: 0, maba: 0, lulus: 0, do: 0, aktif: 0 },
+            ts1: { id_tahun: 0, tahun: 0, maba: 0, lulus: 0, do: 0, aktif: 0 },
+            ts2: { id_tahun: 0, tahun: 0, maba: 0, lulus: 0, do: 0, aktif: 0 }
+        };
+
+        window.onload = () => {
+            renderFormInputs();
+        };
+
+        // --- AUTH ---
+        async function handleLogin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    isLoggedIn = true;
+                    session = { 
+                        token: result.token, 
+                        unit: result.user.unit, 
+                        username: result.user.username,
+                        userId: result.user.id_user || result.user.id_unit 
+                    };
+                    
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('user-section').classList.remove('hidden');
+                    document.getElementById('display-role').innerText = `${session.unit} ACTIVE`;
+                    document.getElementById('form-wrapper').classList.remove('auth-locked');
+                    
+                    await loadTahunDropdown();
+                    loadData();
+                } else {
+                    showAlert("Login Gagal", result.message || "Username/Password salah.");
+                }
+            } catch (err) {
+                showAlert("Server Error", "Backend belum aktif atau URL salah.");
+            }
+        }
+
+        function handleLogout() { location.reload(); }
+
+        async function loadTahunDropdown() {
+            const select = document.getElementById('id_tahun');
+            try {
+                const res = await fetch(`${API_BASE}/master/tahun-akademik`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    select.innerHTML = result.data
+                        .sort((a,b) => b.tahun - a.tahun)
+                        .map(t => `<option value="${t.id_tahun}">${t.tahun}/${parseInt(t.tahun)+1}</option>`)
+                        .join('');
+                }
+            } catch (err) {
+                select.innerHTML = `
+                    <option value="7">2026/2027</option>
+                    <option value="6" selected>2025/2026</option>
+                    <option value="5">2024/2025</option>
+                `;
+            }
+        }
+
+        function showAlert(title, text, confirmCallback = null) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-text').innerText = text;
+            
+            const btnConfirm = document.getElementById('alert-btn-confirm');
+            if (confirmCallback) {
+                btnConfirm.classList.remove('hidden');
+                btnConfirm.onclick = () => {
+                    document.getElementById('modal-alert').classList.add('hidden');
+                    confirmCallback();
+                };
+            } else {
+                btnConfirm.classList.add('hidden');
+            }
+            document.getElementById('modal-alert').classList.remove('hidden');
+        }
+
+        // --- RENDER FORM INPUT KOTAK COHORT TUNGGAL (HANYA UNTUK TS SEHINGGA EFEKTIF!) ---
+        function renderFormInputs() {
+            const container = document.getElementById('input-container');
+            const data = activeCohorts.ts; // Sesuai feedback Rhe, kita hanya perlu mengedit angkatan TS berjalan!
+
+            if (!data || !data.id_tahun) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 font-bold uppercase text-[10px] tracking-wider bg-white rounded-2xl border">
+                        Pilih Tahun Akademik Terlebih Dahulu
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="input-card">
+                    <div class="category-header border-b pb-2 mb-3">
+                        <span class="category-title text-blue-600 font-extrabold uppercase text-[11px] tracking-tight">Input Retensi Angkatan TS (${data.tahun ? data.tahun : '—'})</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <span class="field-label">Mahasiswa Baru (2.A.1)</span>
+                            <input type="number" value="${data.maba}" disabled class="w-full p-2.5 bg-slate-100 text-slate-400 border rounded-xl text-xs font-black text-center cursor-not-allowed">
+                        </div>
+                        <div>
+                            <span class="field-label">Mahasiswa Aktif (2.A.1)</span>
+                            <input type="number" value="${data.aktif}" disabled class="w-full p-2.5 bg-green-50 text-green-600 border border-green-100 rounded-xl text-xs font-black text-center cursor-not-allowed">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <span class="field-label text-slate-600">Jumlah Lulus</span>
+                            <input type="number" oninput="updateCohortValue('ts', 'lulus', this.value)" value="${data.lulus}" class="w-full p-2.5 border rounded-xl text-xs font-bold text-center focus:border-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <span class="field-label text-slate-600">Jumlah DO / Resign</span>
+                            <input type="number" oninput="updateCohortValue('ts', 'do', this.value)" value="${data.do}" class="w-full p-2.5 border rounded-xl text-xs font-bold text-center focus:border-blue-500 outline-none">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateCohortValue(key, field, val) {
+            const intVal = parseInt(val) || 0;
+            activeCohorts[key][field] = intVal;
+            renderPreviewTable();
+        }
+
+        // --- LOAD DATA & SINKRON ---
+        async function loadData() {
+            if(!isLoggedIn) return;
+            const prodi = document.getElementById('id_prodi').value;
+            const tahun = document.getElementById('id_tahun').value;
+            
+            try {
+                const res = await fetch(`${API_2A3}/${prodi}/${tahun}`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    activeCohorts = result.data;
+                    renderFormInputs();
+                    renderPreviewTable();
+                    loadTrashCount();
+                } else {
+                    showAlert("Gagal Load", result.message);
+                }
+            } catch (err) {
+                console.error(err);
+                showAlert("Koneksi Error", "Gagal menghubungi server untuk load data.");
+            }
+        }
+
+        // --- PREVIEW TABEL BERJENJANG (KUNING-ABU BAN-PT 100% MATCH) ---
+        function renderPreviewTable() {
+            const tbody = document.getElementById('table-body');
+            
+            const ts2 = activeCohorts.ts2;
+            const ts1 = activeCohorts.ts1;
+            const ts = activeCohorts.ts;
+
+            const rowsLayout = [
+                { label: 'Mahasiswa Baru', c2: ts2.maba, c1: ts1.maba, c0: ts.maba },
+                { label: 'Mahasiswa Aktif pada saat TS', c2: ts2.aktif, c1: ts1.aktif, c0: ts.aktif },
+                { label: 'Lulus pada saat TS', c2: ts2.lulus, c1: ts1.lulus, c0: ts.lulus },
+                { label: 'Mengundurkan Diri/DO pada saat TS', c2: ts2.do, c1: ts1.do, c0: ts.do }
+            ];
+
+            tbody.innerHTML = rowsLayout.map(r => {
+                const total = r.c2 + r.c1 + r.c0;
+                return `
+                    <tr class="border-b border-slate-300">
+                        <td class="text-left px-8 py-3 bg-gray-lkps uppercase text-[10px] tracking-tight font-black">${r.label}</td>
+                        <td class="bg-yellow-lkps font-bold">${r.c2}</td>
+                        <td class="bg-yellow-lkps font-bold">${r.c1}</td>
+                        <td class="bg-yellow-lkps font-black text-blue-900">${r.c0}</td>
+                        <td class="bg-yellow-lkps font-black">${total}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // --- AKSI SAVE (STORE - SINGLE COHORT SAVE UNTUK EFISIENSI MAKSIMAL) ---
+        async function saveData() {
+            if(!isLoggedIn) return;
+            const prodi = parseInt(document.getElementById('id_prodi').value);
+            const data = activeCohorts.ts; // Hanya simpan data untuk angkatan TS yang sedang aktif diedit
+
+            const payload = {
+                id_prodi: prodi,
+                id_tahun: data.id_tahun,
+                user_id: session.userId,
+                lulus: data.lulus,
+                do: data.do
+            };
+
+            try {
+                const res = await fetch(`${API_2A3}/store`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                    body: JSON.stringify(payload)
+                });
+                const result = await res.json();
+                
+                if (result.success) {
+                    loadData();
+                    showAlert("Berhasil", result.message);
+                } else {
+                    showAlert("Gagal Simpan", result.message);
+                }
+            } catch (err) {
+                showAlert("Server Error", "Gagal menghubungi server untuk menyimpan data.");
+            }
+        }
+
+        // --- SOFT DELETE ---
+        function confirmSoftDelete() {
+            const hasActiveId = activeCohorts.ts.id_2a3;
+            if (!hasActiveId) {
+                showAlert("Peringatan", "Tidak ada data aktif untuk tahun akademik terpilih yang dapat dihapus.");
+                return;
+            }
+            
+            showAlert(
+                "Hapus Data Tahun Ini?", 
+                `Apakah Anda yakin ingin memindahkan data 2.A.3 tahun akademik berjalan ini ke tempat sampah?`,
+                async () => {
+                    try {
+                        const res = await fetch(`${API_2A3}/delete`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                            body: JSON.stringify({ id_2a3: activeCohorts.ts.id_2a3, user_id: session.userId })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            loadData();
+                            showAlert("Berhasil", "Data dipindahkan ke Trash Bin.");
+                        } else {
+                            showAlert("Gagal", result.message);
+                        }
+                    } catch (err) {
+                        showAlert("Error", "Gagal memproses penghapusan.");
+                    }
+                }
+            );
+        }
+
+        // --- TRASH BIN ---
+        async function openTrashModal() {
+            const prodi = document.getElementById('id_prodi').value;
+            const tbody = document.getElementById('trash-tbody');
+            tbody.innerHTML = '<tr><td colspan="3" class="py-10 text-slate-400 font-bold uppercase">Memuat Trash...</td></tr>';
+            document.getElementById('modal-trash').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_2A3}/trash/${prodi}`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                
+                if (result.success && result.data.length > 0) {
+                    tbody.innerHTML = result.data.map(r => `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="py-4 font-bold text-slate-700">${r.tahun}/${parseInt(r.tahun)+1} (Angkatan)</td>
+                            <td class="py-4 text-slate-400 font-medium">${new Date(r.ala_deleted_at).toLocaleString('id-ID')}</td>
+                            <td class="py-4 flex gap-2 justify-center">
+                                <button onclick="restoreTrash(${r.id_2a3})" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase">Restore</button>
+                                <button onclick="hardDeleteTrash(${r.id_2a3})" class="bg-red-50 text-red-500 border border-red-200 px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase hover:bg-red-600 hover:text-white transition">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="py-12 text-slate-300 font-black uppercase text-[10px] tracking-wider">Trash Kosong</td></tr>';
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="3" class="py-10 text-red-500 font-bold">Gagal mengambil data trash.</td></tr>';
+            }
+        }
+
+        function closeTrashModal() { document.getElementById('modal-trash').classList.add('hidden'); }
+
+        async function restoreTrash(id) {
+            try {
+                const res = await fetch(`${API_2A3}/restore/${id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    openTrashModal();
+                    loadData();
+                } else {
+                    showAlert("Gagal", result.message);
+                }
+            } catch (err) { showAlert("Error", "Gagal memulihkan data."); }
+        }
+
+        async function hardDeleteTrash(id) {
+            showAlert(
+                "Hapus Permanen?", 
+                "Menghapus data secara permanen akan menghilangkan data tahun akademik ini dari sistem secara fisik. Lanjutkan?", 
+                async () => {
+                    try {
+                        const res = await fetch(`${API_2A3}/hard-delete/${id}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${session.token}` }
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            openTrashModal();
+                            loadData();
+                        } else {
+                            showAlert("Gagal", result.message);
+                        }
+                    } catch (err) { showAlert("Error", "Gagal menghapus data secara permanen."); }
+                }
+            );
+        }
+
+        async function loadTrashCount() {
+            if(!isLoggedIn) return;
+            const prodi = document.getElementById('id_prodi').value;
+            try {
+                const res = await fetch(`${API_2A3}/trash/${prodi}`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                document.getElementById('trash-count').innerText = result.data ? result.data.length : 0;
+            } catch (err) { console.error(err); }
+        }
+
+        function exportExcel() {
+            window.open(`${API_2A3}/export/${document.getElementById('id_prodi').value}/${document.getElementById('id_tahun').value}`, '_blank');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Tester Backend 2.D</title>
+    <style>
+        body { font-family: monospace; background: #121212; color: #fff; padding: 20px; }
+        .box { border: 1px solid #444; padding: 15px; margin-bottom: 20px; background: #1e1e1e; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+        th { background: #333; color: #007bff; }
+        .yellow { color: yellow; }
+        input, select { background: #2d2d2d; color: #fff; border: 1px solid #555; padding: 5px; margin: 2px; }
+        button { cursor: pointer; padding: 5px 15px; font-weight: bold; margin: 2px; }
+    </style>
+</head>
+<body>
+
+    <h2>🛠️ Tester Backend Tabel 2.D (Rekognisi)</h2>
+
+    <div class="box">
+        <input type="text" id="u" placeholder="User" value="mhs_test">
+        <input type="password" id="p" placeholder="Pass" value="mhs123">
+        <button onclick="login()" style="background: #007bff; color:white">Login</button> |
+        Prodi: <input type="number" id="f_prodi" value="1" style="width:40px">
+        TS: <input type="number" id="f_tahun" value="3" style="width:40px">
+        <button onclick="fetchData()" style="background: green; color:white">GET INDEX</button>
+        <button onclick="tembakExport()" style="background: gold;">EXPORT EXCEL</button>
+    </div>
+
+    <div class="box">
+        <h3>Input Data (Dynamic Source Test)</h3>
+        Sumber: <select id="sel_source"></select> 
+        Atau Ketik Baru: <input type="text" id="new_source" placeholder="Jika sumber tidak ada...">
+        <br>
+        Tahun Entry: <input type="number" id="e_tahun" placeholder="ID Tahun (e.g 3)">
+        Kegiatan: <input type="text" id="e_jenis" style="width:300px">
+        Bukti: <input type="text" id="e_bukti">
+        <button onclick="simpan()" style="background: #007bff; color:white; width:100%; margin-top:10px">POST /store (Execute)</button>
+    </div>
+
+    <div class="box">
+        <h3>Preview Aktif & Integrasi 2.B.4</h3>
+        <table id="t-aktif">
+            <thead>
+                <tr><th>Sumber</th><th>Kegiatan</th><th>Tahun</th><th>Aksi</th></tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        
+        <div style="margin-top:20px; border-top: 1px solid #444; padding-top:10px">
+            <p><strong>Auto Metadata Check (Linkage 2B4):</strong></p>
+            <div id="meta-check"></div>
+        </div>
+    </div>
+
+<script>
+    const API = 'http://localhost:5000/api/kemahasiswaan/2d-rekognisi';
+    let token = '';
+
+    async function login() {
+        const res = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value })
+        });
+        const d = await res.json();
+        if(d.success) { token = d.token; alert("Login OK"); fetchData(); }
+    }
+
+    async function fetchData() {
+        const pid = document.getElementById('f_prodi').value;
+        const tid = document.getElementById('f_tahun').value;
+        const res = await fetch(`${API}?id_prodi=${pid}&id_tahun=${tid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const result = await res.json();
+        
+        if(result.success) {
+            // Dropdown sources
+            const sel = document.getElementById('sel_source');
+            sel.innerHTML = '<option value="">-- Pilih / Ketik Baru --</option>' + result.metadata.ref_sources.map(s => `<option value="${s.id_ref_sumber}">${s.nama_sumber}</option>`).join('');
+            
+            // Table data
+            document.querySelector('#t-aktif tbody').innerHTML = result.data.map(d => `
+                <tr>
+                    <td style="text-align:left">${d.nama_sumber}</td>
+                    <td style="text-align:left">${d.jenis_rekognisi}</td>
+                    <td>${d.nama_tahun}</td>
+                    <td><button onclick="hapus(${d.id_2d})" style="background:red; color:white">DEL</button></td>
+                </tr>
+            `).join('');
+
+            // Meta linkage test
+            document.getElementById('meta-check').innerHTML = result.metadata.graduates.map(g => `
+                <span class="yellow">Tahun ID ${g.id_tahun}: ${g.total} Lulusan</span> | 
+            `).join('');
+        }
+    }
+
+    async function simpan() {
+        const payload = {
+            id_prodi: document.getElementById('f_prodi').value,
+            id_tahun: document.getElementById('e_tahun').value,
+            id_ref_sumber: document.getElementById('sel_source').value,
+            nama_sumber_baru: document.getElementById('new_source').value,
+            jenis_rekognisi: document.getElementById('e_jenis').value,
+            link_bukti: document.getElementById('e_bukti').value
+        };
+        const res = await fetch(API, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(payload)
+        });
+        const r = await res.json(); alert(r.message); fetchData();
+    }
+
+    async function hapus(id) {
+        if(confirm("Hapus?")) { await fetch(`${API}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); fetchData(); }
+    }
+
+    function tembakExport() {
+        const pid = document.getElementById('f_prodi').value;
+        const tid = document.getElementById('f_tahun').value;
+        window.open(`${API}/export?id_prodi=${pid}&id_tahun=${tid}&token=${token}`);
+    }
+</script>
+</body>
+</html>

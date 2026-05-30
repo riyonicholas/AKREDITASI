@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Uji Coba CRUD Master Pegawai</title>
+</head>
+<body>
+    <h1>Tabel Master: Pegawai</h1>
+    <div id="auth-section">
+        <h3>1. Login (Dapatkan Token JWT)</h3>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p>Token: <small id="token-status">Belum Login</small></p>
+    </div>
+    <hr>
+    <div id="form-section">
+        <h3>2. Input/Update Data Pegawai</h3>
+        <input type="hidden" id="id_pegawai">
+        <input type="text" id="nama_lengkap" placeholder="Nama Lengkap"><br>
+        <input type="text" id="nikp" placeholder="NIKP"><br>
+        <input type="number" id="id_unit" placeholder="ID Unit"><br>
+        <input type="number" id="id_jabatan_struktural" placeholder="ID Jabatan Struktural"><br>
+        <input type="text" id="pendidikan_terakhir" placeholder="Pendidikan Terakhir"><br><br>
+        <button onclick="saveData()">Simpan Data</button>
+        <button onclick="resetForm()">Reset Form</button>
+    </div>
+    <hr>
+    <div id="list-section">
+        <h3>3. Data Pegawai</h3>
+        <button onclick="fetchData()">Refresh Data</button>
+        <table border="1" id="data-table" style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Nama</th><th>NIKP</th><th>Unit</th><th>Pendidikan</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        const BASE_URL = 'http://localhost:5000/api';
+        let token = localStorage.getItem('token') || '';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`${BASE_URL}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await res.json();
+            if (result.success) {
+                token = result.token; localStorage.setItem('token', token);
+                document.getElementById('token-status').innerText = 'Tersimpan!'; alert('Login Berhasil!');
+            } else alert(result.message);
+        }
+
+        async function fetchData() {
+            const res = await fetch(`${BASE_URL}/master/pegawai`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+            const tbody = document.querySelector('#data-table tbody'); tbody.innerHTML = '';
+            if (result.success) {
+                result.data.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.id_pegawai}</td><td>${item.nama_lengkap}</td><td>${item.nikp || '-'}</td>
+                            <td>${item.nama_unit || '-'}</td><td>${item.pendidikan_terakhir || '-'}</td>
+                            <td><button onclick="editData(${item.id_pegawai}, '${item.nama_lengkap}', '${item.nikp || ''}', '${item.id_unit || ''}', '${item.id_jabatan_struktural || ''}', '${item.pendidikan_terakhir || ''}')">Edit</button>
+                            <button onclick="deleteData(${item.id_pegawai})">Hapus</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function editData(id, nama, nikp, unit, jab, pend) {
+            document.getElementById('id_pegawai').value = id;
+            document.getElementById('nama_lengkap').value = nama;
+            document.getElementById('nikp').value = nikp;
+            document.getElementById('id_unit').value = unit;
+            document.getElementById('id_jabatan_struktural').value = jab;
+            document.getElementById('pendidikan_terakhir').value = pend;
+        }
+
+        async function saveData() {
+            const id = document.getElementById('id_pegawai').value;
+            const data = {
+                nama_lengkap: document.getElementById('nama_lengkap').value,
+                nikp: document.getElementById('nikp').value,
+                id_unit: document.getElementById('id_unit').value,
+                id_jabatan_struktural: document.getElementById('id_jabatan_struktural').value,
+                pendidikan_terakhir: document.getElementById('pendidikan_terakhir').value
+            };
+            const res = await fetch(id ? `${BASE_URL}/master/pegawai/${id}` : `${BASE_URL}/master/pegawai`, {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json(); alert(result.message);
+            fetchData(); resetForm();
+        }
+
+        async function deleteData(id) {
+            if (confirm('Yakin hapus?')) {
+                const res = await fetch(`${BASE_URL}/master/pegawai/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json(); alert(result.message); fetchData();
+            }
+        }
+
+        function resetForm() { document.querySelectorAll('#form-section input').forEach(el => el.value = ''); }
+    </script>
+</body>
+</html>

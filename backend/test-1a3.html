@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Uji Coba 1.A.3 Penggunaan Dana</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 10px; text-align: center; }
+        th { background: #BFBFBF; }
+        .row-data { background: #FFFF00; }
+        input { padding: 8px; margin-bottom: 5px; width: 220px; }
+        .trash-area { border: 2px dashed red; margin-top: 50px; background: #fff5f5; }
+    </style>
+</head>
+<body>
+
+    <h1>Dashboard Tabel 1.A.3: Penggunaan Dana UPPS/PS</h1>
+
+    <div class="box">
+        <h3>1. Login & Filter Global</h3>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <hr>
+        <label>Filter Prodi:</label> <input type="number" id="f_prodi" value="1" style="width: 50px;">
+        <label>Filter TS:</label> <input type="number" id="f_tahun" value="3" style="width: 50px;">
+        <button onclick="refreshData()">Muat Data</button>
+        <button onclick="exportExcel()" style="background: gold;">Export Excel LKPS</button>
+    </div>
+
+    <div class="box">
+        <h3>2. Input / Edit Data</h3>
+        <input type="hidden" id="id_penggunaan">
+        <input type="text" id="nama_penggunaan" placeholder="Nama (e.g. Pendidikan)">
+        <input type="number" id="jumlah_dana" placeholder="Jumlah (Jutaan)">
+        <input type="text" id="link_bukti" placeholder="Link Bukti">
+        <input type="number" id="id_tahun_entry" placeholder="Tahun (e.g. 3)">
+        <button onclick="simpanData()" style="background: green; color: white;">Simpan Data</button>
+        <button onclick="resetForm()">Batal</button>
+    </div>
+
+    <h3>3. Preview LKPS (Horizontal View)</h3>
+    <table id="table-aktif">
+        <thead>
+            <tr>
+                <th>Penggunaan Dana</th>
+                <th id="h-ts2">TS-2</th>
+                <th id="h-ts1">TS-1</th>
+                <th id="h-ts">TS</th>
+                <th>Link Bukti</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <div class="box trash-area">
+        <h3>🗑️ Tempat Sampah</h3>
+        <table id="table-trash">
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Jumlah</th>
+                    <th>Tahun</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script>
+        const API = 'http://localhost:5000/api/keuangan/1a3-penggunaan-dana';
+        let token = localStorage.getItem('token') || '';
+
+        async function login() {
+            const res = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: document.getElementById('username').value, password: document.getElementById('password').value })
+            });
+            const d = await res.json();
+            if(d.success) { token = d.token; localStorage.setItem('token', token); alert("Login OK!"); refreshData(); }
+        }
+
+        function refreshData() { ambilAktif(); ambilTrash(); }
+
+        async function ambilAktif() {
+            const pid = document.getElementById('f_prodi').value;
+            const tid = document.getElementById('f_tahun').value;
+            
+            document.getElementById('h-ts').innerText = `TS (${tid})`;
+            document.getElementById('h-ts1').innerText = `TS-1 (${tid-1})`;
+            document.getElementById('h-ts2').innerText = `TS-2 (${tid-2})`;
+
+            const res = await fetch(`${API}?id_prodi=${pid}&id_tahun=${tid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+
+            const pivot = {};
+            result.data.forEach(d => {
+                if(!pivot[d.nama_penggunaan]) pivot[d.nama_penggunaan] = { ts2:0, ts1:0, ts:0, link: d.link_bukti, raw: [] };
+                if(d.id_tahun == tid) pivot[d.nama_penggunaan].ts = d.jumlah_dana;
+                else if(d.id_tahun == tid-1) pivot[d.nama_penggunaan].ts1 = d.jumlah_dana;
+                else if(d.id_tahun == tid-2) pivot[d.nama_penggunaan].ts2 = d.jumlah_dana;
+                pivot[d.nama_penggunaan].raw.push(d);
+            });
+
+            const body = document.querySelector('#table-aktif tbody');
+            body.innerHTML = Object.keys(pivot).map(nama => `
+                <tr class="row-data">
+                    <td>${nama}</td>
+                    <td>${pivot[nama].ts2}</td>
+                    <td>${pivot[nama].ts1}</td>
+                    <td>${pivot[nama].ts}</td>
+                    <td><a href="${pivot[nama].link}" target="_blank">Lihat</a></td>
+                    <td><button onclick='kelolaData(${JSON.stringify(pivot[nama].raw)})'>Kelola</button></td>
+                </tr>
+            `).join('');
+        }
+
+        async function ambilTrash() {
+            const pid = document.getElementById('f_prodi').value;
+            const tid = document.getElementById('f_tahun').value;
+            const res = await fetch(`${API}/trash?id_prodi=${pid}&id_tahun=${tid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+            const body = document.querySelector('#table-trash tbody');
+            body.innerHTML = result.data.map(d => `
+                <tr>
+                    <td>${d.nama_penggunaan}</td>
+                    <td>${d.jumlah_dana}</td>
+                    <td>${d.nama_tahun}</td>
+                    <td>
+                        <button onclick="restore(${d.id_penggunaan})">Restore</button>
+                        <button onclick="hard(${d.id_penggunaan})">Permanen</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function simpanData() {
+            const id = document.getElementById('id_penggunaan').value;
+            const body = {
+                id_prodi: document.getElementById('f_prodi').value,
+                nama_penggunaan: document.getElementById('nama_penggunaan').value,
+                jumlah_dana: document.getElementById('jumlah_dana').value,
+                link_bukti: document.getElementById('link_bukti').value,
+                id_tahun: document.getElementById('id_tahun_entry').value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API}/${id}` : API;
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body)
+            });
+            resetForm(); refreshData();
+        }
+
+        function kelolaData(list) {
+            const msg = list.map((d, i) => `${i+1}. ${d.nama_penggunaan} (${d.id_tahun})`).join('\n');
+            const choice = prompt(`Pilih nomor data (E: Edit, H: Hapus):\n${msg}\ne.g. E1 atau H1`);
+            if(!choice) return;
+            const act = choice[0].toUpperCase();
+            const idx = parseInt(choice.substring(1)) - 1;
+            const d = list[idx];
+            if(act === 'E') {
+                document.getElementById('id_penggunaan').value = d.id_penggunaan;
+                document.getElementById('nama_penggunaan').value = d.nama_penggunaan;
+                document.getElementById('jumlah_dana').value = d.jumlah_dana;
+                document.getElementById('link_bukti').value = d.link_bukti;
+                document.getElementById('id_tahun_entry').value = d.id_tahun;
+            } else if(act === 'H') {
+                softDelete(d.id_penggunaan);
+            }
+        }
+
+        async function softDelete(id) {
+            if(confirm("Hapus?")) {
+                await fetch(`${API}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                refreshData();
+            }
+        }
+
+        async function restore(id) {
+            await fetch(`${API}/restore/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+            refreshData();
+        }
+
+        async function hard(id) {
+            if(confirm("Permanen?")) {
+                await fetch(`${API}/hard/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                refreshData();
+            }
+        }
+
+        function resetForm() { document.getElementById('id_penggunaan').value = ''; }
+
+        function exportExcel() {
+            const pid = document.getElementById('f_prodi').value;
+            const tid = document.getElementById('f_tahun').value;
+            window.open(`${API}/export?id_prodi=${pid}&id_tahun=${tid}&token=${token}`);
+        }
+    </script>
+</body>
+</html>

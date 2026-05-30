@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard 1.A.5 - Precision View</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; padding: 20px; background-color: #f8f9fa; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 13px; }
+        th { background: #BFBFBF; font-weight: bold; }
+        .row-kuning { background: #ffff00; }
+        .row-total { background: #ffff00; font-weight: bold; }
+        
+        .btn-export { background: #ffc107; color: black; border: 1px solid #333; padding: 10px 20px; cursor: pointer; font-weight: bold; }
+        .footnote { text-align: left; margin-top: 15px; font-size: 12px; }
+        
+        .auth-box { background: #eee; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Dashboard Tabel 1.A.5 (Kepegawaian)</h1>
+        <button onclick="exportExcel()" class="btn-export">Export Excel LKPS</button>
+    </div>
+
+    <div class="auth-box">
+        <strong>Login Kepegawaian:</strong>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()" style="background: #007bff; color: white; border: none; padding: 5px 15px; border-radius: 3px;">Masuk</button>
+        <button onclick="ambilData()" style="background: #28a745; color: white; border: none; padding: 5px 15px; border-radius: 3px; margin-left: 10px;">Refresh Live Data</button>
+    </div>
+
+    <h3>Rekapitulasi Kualifikasi (Tampilan LKPS)</h3>
+    <table id="table-summary">
+        <thead>
+            <tr>
+                <th rowspan="2" style="width: 40px;">No.</th>
+                <th rowspan="2">Jenis Tenaga Kependidikan</th>
+                <th colspan="8">Jumlah Tenaga Kependidikan dengan Pendidikan Terakhir</th>
+                <th rowspan="2">Unit Kerja</th>
+            </tr>
+            <tr>
+                <th>S3</th><th>S2</th><th>S1</th><th>D4</th><th>D3</th><th>D2</th><th>D1</th><th>SMA/SMK/MA</th>
+            </tr>
+        </thead>
+        <tbody id="body-summary">
+            <!-- Data akan dimuat di sini -->
+        </tbody>
+        <tfoot id="foot-summary"></tfoot>
+    </table>
+
+    <div class="footnote">
+        <p>Keterangan :</p>
+        <p>*) Pustakawan adalah staf perpustakaan yang memiliki ijazah atau sertifikat kompetensi pada bidang ilmu perpustakaan.</p>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:5000/api/kepegawaian/1a5-tendik';
+    let token = localStorage.getItem('token') || '';
+
+    async function login() {
+        const u = document.getElementById('username').value;
+        const p = document.getElementById('password').value;
+        const res = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: u, password: p })
+        });
+        const d = await res.json();
+        if(d.success) {
+            token = d.token;
+            localStorage.setItem('token', token);
+            alert("Login Berhasil!");
+            ambilData();
+        } else { alert("Login Gagal"); }
+    }
+
+    async function ambilData() {
+        if(!token) return alert("Login dulu!");
+        const res = await fetch(API, { headers: { 'Authorization': `Bearer ${token}` } });
+        const result = await res.json();
+
+        if(result.success) {
+            const data = result.summary;
+            const categories = ['Pustakawan *)', 'Laboran/Teknisi', 'Administrasi', 'Lainnya'];
+            const tbody = document.getElementById('body-summary');
+            const tfoot = document.getElementById('foot-summary');
+            
+            let html = "";
+            let totals = { s3:0, s2:0, s1:0, d4:0, d3:0, d2:0, d1:0, sma:0 };
+
+            categories.forEach((cat, idx) => {
+                const cleanCat = cat.replace(' *)', '');
+                const d = data.find(item => item.jenis.includes(cleanCat)) || {};
+                
+                html += `
+                    <tr class="row-kuning">
+                        <td>${idx + 1}.</td>
+                        <td style="text-align: left; padding-left: 15px;">${cat}</td>
+                        <td>${d.s3 || 0}</td><td>${d.s2 || 0}</td><td>${d.s1 || 0}</td>
+                        <td>${d.d4 || 0}</td><td>${d.d3 || 0}</td><td>${d.d2 || 0}</td><td>${d.d1 || 0}</td>
+                        <td>${d.sma || 0}</td>
+                        <td>${d.unit_kerja || ''}</td>
+                    </tr>
+                `;
+
+                totals.s3 += (d.s3 || 0); totals.s2 += (d.s2 || 0); totals.s1 += (d.s1 || 0);
+                totals.d4 += (d.d4 || 0); totals.d3 += (d.d3 || 0); totals.d2 += (d.d2 || 0);
+                totals.d1 += (d.d1 || 0); totals.sma += (d.sma || 0);
+            });
+
+            tbody.innerHTML = html;
+            tfoot.innerHTML = `
+                <tr class="row-total">
+                    <td colspan="2">Total</td>
+                    <td>${totals.s3}</td><td>${totals.s2}</td><td>${totals.s1}</td>
+                    <td>${totals.d4}</td><td>${totals.d3}</td><td>${totals.d2}</td><td>${totals.d1}</td>
+                    <td>${totals.sma}</td>
+                    <td></td>
+                </tr>
+            `;
+        }
+    }
+
+    function exportExcel() {
+        if(!token) return alert("Login dulu!");
+        window.open(`${API}/export?token=${token}`);
+    }
+</script>
+
+</body>
+</html>

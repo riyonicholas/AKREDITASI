@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Uji Coba CRUD 2.B.2 Pemetaan CPL dan PL</title>
+</head>
+<body>
+    <h1>Tabel Borang: 2.B.2 Pemetaan CPL dan PL</h1>
+    <div id="auth-section">
+        <h3>1. Login (Dapatkan Token JWT)</h3>
+        <input type="text" id="username" placeholder="Username" value="admin">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <p>Token: <small id="token-status">Belum Login</small></p>
+    </div>
+    <hr>
+    <div id="global-filter" style="background-color: #f0f8ff; padding: 10px; border: 1px solid #ccc;">
+        <h3>[Wajib] Pilih Program Studi</h3>
+        <select id="global_prodi" onchange="onProdiChange()">
+            <option value="">-- Pilih Prodi Terlebih Dahulu --</option>
+        </select>
+        <p><small>*Memilih prodi akan secara otomatis memfilter opsi dropdown form dan isi tabel di bawah.</small></p>
+    </div>
+    <hr>
+    <div id="form-section">
+        <h3>2. Input/Update Data</h3>
+        <input type="hidden" id="id_2b2">
+        <select id="id_cpl"><option value="">-- Pilih CPL --</option></select><br>
+        <select id="id_pl"><option value="">-- Pilih Profil Lulusan --</option></select><br>
+        <select id="id_tahun"><option value="">-- Pilih Tahun Akademik --</option></select><br><br>
+        <button onclick="saveData()">Simpan Data</button>
+        <button onclick="resetForm()">Reset Form</button>
+    </div>
+    <hr>
+    <div id="list-section">
+        <h3>3. Data 2.B.2 (Terfilter berdasarkan Prodi)</h3>
+        <button onclick="fetchData()">Refresh Data</button>
+        <table border="1" id="data-table" style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>ID 2B2</th><th>CPL</th><th>Profil Lulusan</th><th>Tahun</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        const BASE_URL = 'http://localhost:5000/api';
+        let token = localStorage.getItem('token') || '';
+
+        if(token) {
+            document.getElementById('token-status').innerText = 'Tersimpan!';
+            loadProdi();
+            loadOptions();
+            fetchData();
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`${BASE_URL}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await res.json();
+            if (result.success) {
+                token = result.token; localStorage.setItem('token', token);
+                document.getElementById('token-status').innerText = 'Tersimpan!'; alert('Login Berhasil!');
+                loadProdi();
+                loadOptions();
+                fetchData();
+            } else alert(result.message);
+        }
+
+        async function loadProdi() {
+            if (!token) return;
+            try {
+                const res = await fetch(`${BASE_URL}/master/prodi`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                const sel = document.getElementById('global_prodi');
+                if(data.success) {
+                    sel.innerHTML = '<option value="">-- Pilih Prodi Terlebih Dahulu --</option>';
+                    data.data.forEach(item => sel.innerHTML += `<option value="${item.id_prodi}">${item.nama_prodi}</option>`);
+                }
+            } catch(e) { console.error('Error loading prodi:', e); }
+        }
+
+        function onProdiChange() {
+            loadOptions();
+            fetchData();
+        }
+
+        async function loadOptions() {
+            if (!token) return;
+            const prodiId = document.getElementById('global_prodi').value;
+            let queryProdi = prodiId ? `?id_prodi=${prodiId}` : '';
+
+            try {
+                const resCPL = await fetch(`${BASE_URL}/master/cpl${queryProdi}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const dataCPL = await resCPL.json();
+                const selCPL = document.getElementById('id_cpl');
+                if(dataCPL.success) {
+                    selCPL.innerHTML = '<option value="">-- Pilih CPL --</option>';
+                    dataCPL.data.forEach(item => selCPL.innerHTML += `<option value="${item.id_cpl}">[${item.kode_cpl}] ${item.deskripsi_cpl ? item.deskripsi_cpl.substring(0,30) : ''}</option>`);
+                }
+                
+                const resPL = await fetch(`${BASE_URL}/master/profil-lulusan${queryProdi}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const dataPL = await resPL.json();
+                const selPL = document.getElementById('id_pl');
+                if(dataPL.success) {
+                    selPL.innerHTML = '<option value="">-- Pilih Profil Lulusan --</option>';
+                    dataPL.data.forEach(item => selPL.innerHTML += `<option value="${item.id_pl}">[${item.kode_pl}] ${item.deskripsi_pl ? item.deskripsi_pl.substring(0,30) : ''}</option>`);
+                }
+
+                const resTahun = await fetch(`${BASE_URL}/master/tahun-akademik`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const dataTahun = await resTahun.json();
+                const selTahun = document.getElementById('id_tahun');
+                if(dataTahun.success) {
+                    selTahun.innerHTML = '<option value="">-- Pilih Tahun Akademik --</option>';
+                    dataTahun.data.forEach(item => selTahun.innerHTML += `<option value="${item.id_tahun}">${item.tahun || item.nama_tahun || item.id_tahun}</option>`);
+                }
+            } catch(e) { console.error('Error loading options:', e); }
+        }
+
+        async function fetchData() {
+            const prodiId = document.getElementById('global_prodi').value;
+            let url = `${BASE_URL}/prodi/2b2-pemetaan-cpl`;
+            if (prodiId) url += `?id_prodi=${prodiId}`;
+
+            const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+            const tbody = document.querySelector('#data-table tbody'); tbody.innerHTML = '';
+            if (result.success) {
+                result.data.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.id_2b2}</td>
+                            <td>[${item.kode_cpl}] ${item.deskripsi_cpl ? item.deskripsi_cpl.substring(0,20)+'...' : item.id_cpl}</td>
+                            <td>[${item.kode_pl}] ${item.deskripsi_pl ? item.deskripsi_pl.substring(0,20)+'...' : item.id_pl}</td>
+                            <td>${item.tahun || item.id_tahun}</td>
+                            <td><button onclick="editData(${item.id_2b2}, ${item.id_cpl}, ${item.id_pl}, ${item.id_tahun})">Edit</button>
+                            <button onclick="deleteData(${item.id_2b2})">Hapus</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function editData(id, cpl, pl, tahun) {
+            document.getElementById('id_2b2').value = id;
+            document.getElementById('id_cpl').value = cpl;
+            document.getElementById('id_pl').value = pl;
+            document.getElementById('id_tahun').value = tahun;
+        }
+
+        async function saveData() {
+            const id = document.getElementById('id_2b2').value;
+            const data = {
+                id_cpl: document.getElementById('id_cpl').value,
+                id_pl: document.getElementById('id_pl').value,
+                id_tahun: document.getElementById('id_tahun').value
+            };
+            const res = await fetch(id ? `${BASE_URL}/prodi/2b2-pemetaan-cpl/${id}` : `${BASE_URL}/prodi/2b2-pemetaan-cpl`, {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json(); alert(result.message);
+            fetchData(); resetForm();
+        }
+
+        async function deleteData(id) {
+            if (confirm('Yakin hapus?')) {
+                const res = await fetch(`${BASE_URL}/prodi/2b2-pemetaan-cpl/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json(); alert(result.message); fetchData();
+            }
+        }
+
+        function resetForm() { document.querySelectorAll('#form-section input, #form-section select').forEach(el => el.value = ''); }
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Uji Coba CRUD Master Prodi</title>
+</head>
+<body>
+    <h1>Tabel Master: Prodi (Program Studi)</h1>
+    <div id="auth-section">
+        <h3>1. Login (Dapatkan Token JWT)</h3>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+        <p>Token: <small id="token-status">Belum Login</small></p>
+    </div>
+    <hr>
+    <div id="form-section">
+        <h3>2. Input/Update Data Prodi</h3>
+        <input type="hidden" id="id_prodi">
+        <input type="text" id="nama_prodi" placeholder="Nama Prodi"><br>
+        <input type="number" id="id_unit" placeholder="ID Unit Kerja Terkait"><br><br>
+        <button onclick="saveData()">Simpan Data</button>
+        <button onclick="resetForm()">Reset Form</button>
+    </div>
+    <hr>
+    <div id="list-section">
+        <h3>3. Data Prodi Aktif</h3>
+        <button onclick="fetchData()">Refresh Data</button>
+        <table border="1" id="data-table" style="width: 100%; margin-top: 10px;">
+            <thead>
+                <tr>
+                    <th>ID Prodi</th><th>Nama Prodi</th><th>Unit</th><th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+    <script>
+        const BASE_URL = 'http://localhost:5000/api';
+        let token = localStorage.getItem('token') || '';
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const res = await fetch(`${BASE_URL}/auth/login`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const result = await res.json();
+            if (result.success) {
+                token = result.token; localStorage.setItem('token', token);
+                document.getElementById('token-status').innerText = 'Tersimpan!'; alert('Login Berhasil!');
+            } else alert(result.message);
+        }
+
+        async function fetchData() {
+            const res = await fetch(`${BASE_URL}/master/prodi`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const result = await res.json();
+            const tbody = document.querySelector('#data-table tbody'); tbody.innerHTML = '';
+            if (result.success) {
+                result.data.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.id_prodi}</td><td>${item.nama_prodi}</td><td>${item.nama_unit || '-'}</td>
+                            <td><button onclick="editData(${item.id_prodi}, '${item.nama_prodi}', '${item.id_unit || ''}')">Edit</button>
+                            <button onclick="deleteData(${item.id_prodi})">Hapus</button></td>
+                        </tr>
+                    `;
+                });
+            }
+        }
+
+        function editData(id, nama, unit) {
+            document.getElementById('id_prodi').value = id;
+            document.getElementById('nama_prodi').value = nama;
+            document.getElementById('id_unit').value = unit;
+        }
+
+        async function saveData() {
+            const id = document.getElementById('id_prodi').value;
+            const data = {
+                nama_prodi: document.getElementById('nama_prodi').value,
+                id_unit: document.getElementById('id_unit').value
+            };
+            const res = await fetch(id ? `${BASE_URL}/master/prodi/${id}` : `${BASE_URL}/master/prodi`, {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json(); alert(result.message);
+            fetchData(); resetForm();
+        }
+
+        async function deleteData(id) {
+            if (confirm('Yakin hapus?')) {
+                const res = await fetch(`${BASE_URL}/master/prodi/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+                const result = await res.json(); alert(result.message); fetchData();
+            }
+        }
+
+        function resetForm() { document.querySelectorAll('#form-section input').forEach(el => el.value = ''); }
+    </script>
+</body>
+</html>

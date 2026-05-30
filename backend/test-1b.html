@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Uji Coba 1.B - SPMI (TPM Only)</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f7f6; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section { border: 1px solid #ccc; padding: 15px; margin-bottom: 20px; background: #f9f9f9; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { border: 1px solid black; padding: 10px; text-align: center; font-size: 13px; }
+        th { background: #eee; }
+        .row-kuning { background: #ffff00; }
+        input { margin-bottom: 5px; width: 250px; padding: 5px; }
+        button { cursor: pointer; padding: 5px 10px; }
+        .trash-section { margin-top: 40px; border-top: 2px dashed #dc3545; padding-top: 20px; }
+        .btn-restore { background: #17a2b8; color: white; border: none; border-radius: 3px; }
+        .btn-hard { background: #000; color: white; border: none; border-radius: 3px; }
+        .error-msg { color: #721c24; background-color: #f8d7da; border: 1px solid #f5c6cb; padding: 10px; margin-bottom: 20px; border-radius: 4px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Uji Coba Tabel 1.B (Unit SPMI & SDM)</h1>
+
+    <div id="error-display" class="error-msg"></div>
+
+    <!-- 1. AUTH & FILTER -->
+    <div class="section">
+        <h3>1. Login & Filter</h3>
+        <input type="text" id="username" placeholder="Username (Role: TPM)">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()" style="background: #444; color: white;">Login</button>
+        | <strong>Tahun:</strong> <input type="number" id="filter_tahun" value="1" style="width: 50px;">
+        <button onclick="refreshData()" style="background: #007bff; color: white;">Muat Data</button>
+        <button onclick="exportExcel()" style="background: gold; font-weight: bold;">Export Excel</button>
+    </div>
+
+    <!-- 2. INPUT FORM -->
+    <div class="section">
+        <h3>2. Input Data SPMI</h3>
+        <input type="hidden" id="id_unit_spmi">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div>
+                <label>Unit Kerja ID:</label><br><input type="number" id="unit_kerja_id_unit" placeholder="ID Unit Kerja"><br>
+                <label>Dokumen SPMI (Link):</label><br><input type="text" id="dokumen_spmi"><br>
+                <label>Auditor Certified:</label><br><input type="number" id="auditor_certified" value="0"><br>
+                <label>Auditor Non-Certified:</label><br><input type="number" id="auditor_non_certified" value="0">
+            </div>
+            <div>
+                <label>Frekuensi Audit:</label><br><input type="number" id="frekuensi_audit" value="1"><br>
+                <label>Link Bukti Sertifikat:</label><br><input type="text" id="bukti_certified_auditor"><br>
+                <label>Link Laporan Audit:</label><br><input type="text" id="laporan_audit">
+            </div>
+        </div>
+        <br>
+        <button onclick="saveData()" id="btn-save" style="background: green; color: white; padding: 10px;">Simpan Data SPMI</button>
+        <button onclick="resetForm()">Reset / Batal</button>
+    </div>
+
+    <!-- 3. DATA AKTIF -->
+    <h3>3. Dashboard Penjaminan Mutu (Aktif)</h3>
+    <table id="table-spmi">
+        <thead>
+            <tr>
+                <th>Unit Kerja</th>
+                <th>Total Auditor</th>
+                <th>Cert.</th>
+                <th>Non-Cert.</th>
+                <th>Frekuensi</th>
+                <th>Dokumen</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- 4. TEMPAT SAMPAH -->
+    <div class="trash-section">
+        <h3 style="color: #dc3545;">🗑️ Tempat Sampah (Data Terhapus)</h3>
+        <table id="table-trash">
+            <thead>
+                <tr>
+                    <th>Unit Kerja</th>
+                    <th>Dokumen</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:5000/api/tpm/1b-spmi';
+    let token = localStorage.getItem('token') || '';
+
+    function showError(msg) {
+        const errDiv = document.getElementById('error-display');
+        errDiv.innerText = msg;
+        errDiv.style.display = 'block';
+        setTimeout(() => { errDiv.style.display = 'none'; }, 5000);
+    }
+
+    async function login() {
+        try {
+            const res = await fetch('http://localhost:5000/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    username: document.getElementById('username').value, 
+                    password: document.getElementById('password').value 
+                })
+            });
+            
+            if (!res.ok) throw new Error(`Login Gagal (Status: ${res.status})`);
+            
+            const d = await res.json();
+            if(d.success) { 
+                token = d.token; 
+                localStorage.setItem('token', token);
+                alert("Login TPM Berhasil"); 
+                refreshData(); 
+            } else {
+                showError("Gagal Login: " + d.message);
+            }
+        } catch (e) {
+            showError("Koneksi gagal: " + e.message);
+        }
+    }
+
+    function refreshData() {
+        fetchData();
+        fetchTrash();
+    }
+
+    async function fetchData() {
+        try {
+            const th = document.getElementById('filter_tahun').value;
+            const res = await fetch(`${API}?id_tahun=${th}`, { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            
+            if (res.status === 404) {
+                return showError("Endpoint API 1.B Aktif tidak ditemukan (404). Pastikan rute sudah didaftarkan di app.js!");
+            }
+            
+            if (!res.ok) throw new Error(`Gagal memuat data (Status: ${res.status})`);
+
+            const result = await res.json();
+            if(result.success) {
+                const tbody = document.querySelector('#table-spmi tbody');
+                tbody.innerHTML = result.data.map(d => `
+                    <tr class="row-kuning">
+                        <td>${d.nama_unit}</td>
+                        <td><b>${d.jumlah_auditor}</b></td>
+                        <td>${d.auditor_certified}</td>
+                        <td>${d.auditor_non_certified}</td>
+                        <td>${d.frekuensi_audit}x</td>
+                        <td><a href="${d.dokumen_spmi}" target="_blank">Buka</a></td>
+                        <td>
+                            <button onclick='isiEdit(${JSON.stringify(d)})'>Edit</button>
+                            <button onclick="hapusSoft(${d.id_unit_spmi})" style="color:red">Hapus</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function fetchTrash() {
+        try {
+            const th = document.getElementById('filter_tahun').value;
+            const res = await fetch(`${API}/trash?id_tahun=${th}`, { 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+
+            if (res.status === 404) {
+                return console.warn("Endpoint Trash 1.B tidak ditemukan (404).");
+            }
+
+            if (!res.ok) throw new Error("Gagal memuat sampah.");
+
+            const result = await res.json();
+            if(result.success) {
+                const tbody = document.querySelector('#table-trash tbody');
+                tbody.innerHTML = result.data.map(d => `
+                    <tr>
+                        <td>${d.nama_unit}</td>
+                        <td>${d.dokumen_spmi}</td>
+                        <td>
+                            <button class="btn-restore" onclick="restoreData(${d.id_unit_spmi})">Pulihkan</button>
+                            <button class="btn-hard" onclick="hardDelete(${d.id_unit_spmi})">Permanen</button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function saveData() {
+        try {
+            const id = document.getElementById('id_unit_spmi').value;
+            const body = {
+                unit_kerja_id_unit: document.getElementById('unit_kerja_id_unit').value,
+                tahun_akademik_id_tahun: document.getElementById('filter_tahun').value,
+                dokumen_spmi: document.getElementById('dokumen_spmi').value,
+                auditor_certified: document.getElementById('auditor_certified').value,
+                auditor_non_certified: document.getElementById('auditor_non_certified').value,
+                frekuensi_audit: document.getElementById('frekuensi_audit').value,
+                bukti_certified_auditor: document.getElementById('bukti_certified_auditor').value,
+                laporan_audit: document.getElementById('laporan_audit').value
+            };
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API}/${id}` : API;
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(body)
+            });
+
+            if (!res.ok) throw new Error("Gagal menyimpan data.");
+
+            const r = await res.json();
+            alert(r.message);
+            resetForm(); 
+            refreshData();
+        } catch (e) {
+            showError(e.message);
+        }
+    }
+
+    async function restoreData(id) {
+        await fetch(`${API}/restore/${id}`, { 
+            method: 'POST', 
+            headers: { 'Authorization': `Bearer ${token}` } 
+        });
+        refreshData();
+    }
+
+    async function hardDelete(id) {
+        if(confirm("HAPUS PERMANEN? Data tidak bisa kembali!")) {
+            await fetch(`${API}/hard/${id}`, { 
+                method: 'DELETE', 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            refreshData();
+        }
+    }
+
+    async function hapusSoft(id) {
+        if(confirm("Pindahkan ke tempat sampah?")) {
+            await fetch(`${API}/${id}`, { 
+                method: 'DELETE', 
+                headers: { 'Authorization': `Bearer ${token}` } 
+            });
+            refreshData();
+        }
+    }
+
+    function isiEdit(d) {
+        document.getElementById('id_unit_spmi').value = d.id_unit_spmi;
+        document.getElementById('unit_kerja_id_unit').value = d.unit_kerja_id_unit;
+        document.getElementById('dokumen_spmi').value = d.dokumen_spmi;
+        document.getElementById('auditor_certified').value = d.auditor_certified;
+        document.getElementById('auditor_non_certified').value = d.auditor_non_certified;
+        document.getElementById('frekuensi_audit').value = d.frekuensi_audit;
+        document.getElementById('bukti_certified_auditor').value = d.bukti_certified_auditor;
+        document.getElementById('laporan_audit').value = d.laporan_audit;
+        document.getElementById('btn-save').innerText = "Update Data";
+    }
+
+    function resetForm() {
+        document.getElementById('id_unit_spmi').value = '';
+        document.getElementById('btn-save').innerText = "Simpan Data SPMI";
+    }
+
+    function exportExcel() {
+        const th = document.getElementById('filter_tahun').value;
+        window.open(`${API}/export?id_tahun=${th}&token=${token}`);
+    }
+</script>
+
+</body>
+</html>

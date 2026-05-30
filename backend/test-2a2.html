@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SI-Akreditasi 2.A.2 - Keragaman Asal Mahasiswa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+        th, td { border: 1px solid #e2e8f0; padding: 12px 10px; text-align: center; word-wrap: break-word; }
+        th { background-color: #0f172a; color: #f8fafc; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        .input-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 20px; padding: 20px; margin-bottom: 16px; transition: all 0.3s; }
+        .input-card.locked { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+        
+        .field-label { font-size: 0.6rem; font-weight: 800; color: #64748b; text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; }
+        .category-title { font-size: 0.75rem; font-weight: 800; color: #1e293b; text-transform: uppercase; }
+        
+        .row-region { display: grid; grid-template-columns: 80px 1fr 40px; gap: 8px; margin-bottom: 8px; align-items: center; }
+        
+        .btn-plus { background: #eff6ff; color: #2563eb; padding: 4px 12px; border-radius: 8px; font-size: 0.65rem; font-weight: 800; transition: all 0.2s; }
+        .btn-plus:hover { background: #2563eb; color: white; }
+        
+        .val-cell { font-size: 0.75rem; font-weight: 700; }
+        .ts-active { color: #2563eb; background-color: #eff6ff; }
+        .area-detail { font-size: 0.6rem; color: #94a3b8; font-style: italic; margin-top: 4px; line-height: 1.3; text-align: left; }
+
+        .auth-locked { position: relative; }
+        .auth-locked::after { content: "Silahkan Login untuk Input Data"; position: absolute; inset: 0; background: rgba(255,255,255,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 40; font-size: 0.7rem; font-weight: 800; color: #1e293b; text-transform: uppercase; border-radius: 2rem; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-900">
+
+    <div class="max-w-[98%] mx-auto p-4">
+        
+        <!-- TOP NAVIGATION & LOGIN BAR -->
+        <header class="bg-white rounded-[2rem] shadow-xl border border-slate-200 p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-4 px-4">
+                <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg">ST</div>
+                <div>
+                    <h1 class="text-sm font-black uppercase tracking-tighter">SI-Akreditasi 2.A.2</h1>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Unit Pengelola: PMB & Admin</p>
+                </div>
+            </div>
+
+            <!-- Header Login Section -->
+            <div id="login-section" class="flex items-center gap-3 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+                <input type="text" id="login-user" placeholder="Username" class="bg-white border p-2 rounded-xl text-[10px] w-28 outline-none focus:ring-2 focus:ring-blue-500 font-bold uppercase">
+                <input type="password" id="login-pass" placeholder="Password" class="bg-white border p-2 rounded-xl text-[10px] w-28 outline-none focus:ring-2 focus:ring-blue-500 font-bold uppercase">
+                <button onclick="handleLogin()" id="btn-login" class="bg-blue-600 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition">Masuk</button>
+            </div>
+
+            <!-- User Info -->
+            <div id="user-section" class="hidden flex items-center gap-6">
+                <div class="text-right">
+                    <p id="display-role" class="text-[10px] font-black text-blue-600 uppercase">GUEST</p>
+                    <button onclick="handleLogout()" class="text-[9px] font-bold text-red-400 hover:text-red-600 uppercase">Keluar</button>
+                </div>
+                <!-- Tombol Manajemen Trash (Tempat Sampah) -->
+                <button onclick="openTrashModal()" class="bg-red-50 text-red-600 px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-100 transition relative">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Trash <span id="trash-count" class="bg-red-600 text-white px-1.5 py-0.5 rounded-full text-[8px]">0</span>
+                </button>
+                <button onclick="exportExcel()" class="bg-green-600 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-700 shadow-lg shadow-green-100">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    Export Excel
+                </button>
+            </div>
+        </header>
+
+        <!-- DASHBOARD GRID -->
+        <div class="grid grid-cols-12 gap-6">
+            
+            <!-- LEFT: INPUT FORM -->
+            <div class="col-span-12 lg:col-span-4 space-y-6">
+                <div class="bg-white p-6 rounded-[2rem] shadow-lg border border-slate-200">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">ID Prodi</label>
+                            <input type="number" id="id_prodi" onchange="loadData()" value="1" min="1" class="w-full p-3 border rounded-xl text-xs font-black bg-slate-50 outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="field-label">Tahun Akademik (TS)</label>
+                            <select id="id_tahun" onchange="loadData()" class="w-full p-3 border rounded-xl text-xs font-black bg-blue-50 text-blue-600 outline-none">
+                                <option value="">Memuat Tahun...</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 p-6 rounded-[2rem] text-white shadow-2xl overflow-hidden relative">
+                    <p class="text-[9px] font-black uppercase tracking-widest opacity-40 mb-4">Target Sinkron (Tabel 2.A.1)</p>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <p class="text-xl font-black text-blue-400" id="target-maba">0</p>
+                            <p class="text-[8px] font-bold opacity-30 uppercase">MABA</p>
+                        </div>
+                        <div class="text-center border-x border-white/10">
+                            <p class="text-xl font-black text-yellow-400" id="target-afirmasi">0</p>
+                            <p class="text-[8px] font-bold opacity-30 uppercase">AFIRMASI</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-xl font-black text-green-400" id="target-khusus">0</p>
+                            <p class="text-[8px] font-bold opacity-30 uppercase">KHUSUS</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="form-wrapper" class="auth-locked">
+                    <div class="space-y-4">
+                        <form id="main-form" class="space-y-4">
+                            <div id="input-container"></div>
+                            
+                            <!-- Panel Tombol Aksi Simpan & Hapus (Soft Delete) -->
+                            <div class="grid grid-cols-3 gap-3">
+                                <button type="button" onclick="saveData()" class="col-span-2 bg-blue-600 text-white py-5 rounded-[1.5rem] font-black text-xs tracking-widest uppercase shadow-2xl shadow-blue-100 hover:bg-blue-700 transition active:scale-95">
+                                    Simpan & Sinkron
+                                </button>
+                                <button type="button" onclick="confirmSoftDelete()" class="col-span-1 bg-red-50 text-red-600 border border-red-200 py-5 rounded-[1.5rem] font-black text-xs tracking-widest uppercase hover:bg-red-600 hover:text-white transition active:scale-95">
+                                    Hapus
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: TABLE PREVIEW -->
+            <div class="col-span-12 lg:col-span-8">
+                <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
+                    <div class="p-8 border-b border-slate-100">
+                        <h2 class="text-xl font-black text-slate-800 tracking-tighter uppercase">Laporan Waterfall Keragaman Asal</h2>
+                    </div>
+
+                    <div class="p-6">
+                        <div class="overflow-x-auto rounded-2xl border border-slate-100">
+                            <table id="main-table">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2" class="w-[45%] text-left px-8">Asal Mahasiswa</th>
+                                        <th colspan="3" class="bg-slate-800">Jumlah Mahasiswa Baru</th>
+                                        <th rowspan="2" class="w-[15%]">Link Bukti</th>
+                                    </tr>
+                                    <tr class="bg-slate-700">
+                                        <th class="w-[12%]">TS-2</th>
+                                        <th class="w-[12%]">TS-1</th>
+                                        <th class="w-[12%] bg-blue-700">TS</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="table-body" class="bg-white"></tbody>
+                                <tfoot>
+                                    <tr class="bg-yellow-400 text-slate-900 font-black border-t-2 border-slate-400">
+                                        <td class="text-left px-8 py-5 uppercase text-[9px] tracking-widest italic">Jumlah Total Maba</td>
+                                        <td id="tot-ts2" class="text-lg">0</td>
+                                        <td id="tot-ts1" class="text-lg">0</td>
+                                        <td id="tot-ts" class="text-lg">0</td>
+                                        <td class="bg-yellow-500/20">-</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alert Utama -->
+    <div id="modal-alert" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2.5rem] max-w-sm w-full p-10 shadow-2xl border-t-8 border-red-600">
+            <h3 class="text-xl font-black text-slate-800 text-center mb-2 uppercase tracking-tighter" id="alert-title">Peringatan!</h3>
+            <p id="alert-text" class="text-[10px] text-slate-500 text-center font-bold leading-relaxed mb-10 uppercase"></p>
+            <div class="flex flex-col gap-2">
+                <button id="alert-btn-confirm" class="hidden w-full bg-red-600 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest hover:bg-red-700 transition">Ya, Hapus</button>
+                <button onclick="document.getElementById('modal-alert').classList.add('hidden')" class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl text-[10px] uppercase tracking-widest">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Tempat Sampah (Trash System) -->
+    <div id="modal-trash" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-[2.5rem] max-w-2xl w-full p-10 shadow-2xl border-t-8 border-slate-800">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-black text-slate-800 uppercase tracking-tighter">Trash Bin Tabel 2.A.2</h3>
+                <button onclick="closeTrashModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+            
+            <div class="overflow-y-auto max-h-[50vh] rounded-xl border border-slate-100">
+                <table class="w-full text-xs text-center">
+                    <thead>
+                        <tr class="bg-slate-100 text-[10px] font-black uppercase text-slate-500 tracking-widest border-b">
+                            <th class="py-3">Tahun Akademik</th>
+                            <th class="py-3">Hapus Pada</th>
+                            <th class="py-3">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="trash-tbody" class="divide-y divide-slate-100"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "http://localhost:5000/api";
+        const API_2A2 = "http://localhost:5000/api/pmb/2a2-keragaman-asal"; 
+        const API_2A1 = "http://localhost:5000/api/pmb/2a1-data-mahasiswa";
+        
+        let session = { token: null, unit: null, userId: null, username: null };
+        let isLoggedIn = false;
+        let serverData = []; 
+        let currentRecordId = null; // Menyimpan ID rekaman aktif (id_2a2) untuk aksi hapus
+        
+        let formData = {
+            lokal: { link: '', rows: [{ jml: 0, ket: 'Banyuwangi' }] },
+            regional: { link: '', rows: [{ jml: 0, ket: '' }] },
+            nasional: { link: '', rows: [{ jml: 0, ket: '' }] },
+            internasional: { link: '', rows: [{ jml: 0, ket: '' }] },
+            afirmasi: { link: '', rows: [{ jml: 0, ket: '' }] },
+            khusus: { link: '', rows: [{ jml: 0, ket: '' }] }
+        };
+
+        const categories = [
+            { id: 'lokal', label: 'Kota/Kabupaten Sama dengan PS', allowMultiple: false },
+            { id: 'regional', label: 'Kota/Kabupaten Lain', allowMultiple: true },
+            { id: 'nasional', label: 'Provinsi Lain', allowMultiple: true },
+            { id: 'internasional', label: 'Negara Lain', allowMultiple: true },
+            { id: 'afirmasi', label: 'Jalur Afirmasi', allowMultiple: false },
+            { id: 'khusus', label: 'Berkebutuhan Khusus', allowMultiple: false }
+        ];
+
+        window.onload = () => {
+            renderForm();
+        };
+
+        // --- AUTH SYSTEM ---
+        async function handleLogin() {
+            const user = document.getElementById('login-user').value;
+            const pass = document.getElementById('login-pass').value;
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    isLoggedIn = true;
+                    session = { 
+                        token: result.token, 
+                        unit: result.user.unit, 
+                        username: result.user.username,
+                        userId: result.user.id_user || result.user.id_unit 
+                    };
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('user-section').classList.remove('hidden');
+                    document.getElementById('display-role').innerText = `${session.unit} ACTIVE`;
+                    document.getElementById('form-wrapper').classList.remove('auth-locked');
+                    
+                    await loadTahunDropdown();
+                    loadData();
+                } else {
+                    showAlert("Login Gagal", result.message || "Username/Password salah.");
+                }
+            } catch (err) {
+                showAlert("Server Error", "Backend belum aktif atau URL salah.");
+            }
+        }
+
+        function handleLogout() { location.reload(); }
+
+        async function loadTahunDropdown() {
+            const select = document.getElementById('id_tahun');
+            try {
+                const res = await fetch(`${API_BASE}/master/tahun-akademik`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    select.innerHTML = result.data
+                        .sort((a,b) => b.tahun - a.tahun)
+                        .map(t => `<option value="${t.id_tahun}">${t.tahun}/${parseInt(t.tahun)+1}</option>`)
+                        .join('');
+                }
+            } catch (err) {
+                select.innerHTML = `
+                    <option value="7">2026/2027</option>
+                    <option value="6" selected>2025/2026</option>
+                    <option value="5">2024/2025</option>
+                `;
+            }
+        }
+
+        function showAlert(title, text, confirmCallback = null) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-text').innerText = text;
+            
+            const btnConfirm = document.getElementById('alert-btn-confirm');
+            if (confirmCallback) {
+                btnConfirm.classList.remove('hidden');
+                btnConfirm.onclick = () => {
+                    document.getElementById('modal-alert').classList.add('hidden');
+                    confirmCallback();
+                };
+            } else {
+                btnConfirm.classList.add('hidden');
+            }
+            document.getElementById('modal-alert').classList.remove('hidden');
+        }
+
+        // --- DYNAMIC FORM SYSTEM ---
+        function renderForm() {
+            const container = document.getElementById('input-container');
+            container.innerHTML = categories.map(cat => {
+                const showPlus = cat.allowMultiple;
+                const isLokal = cat.id === 'lokal';
+                
+                return `
+                <div class="input-card">
+                    <div class="category-header">
+                        <span class="category-title">${cat.label}</span>
+                        ${showPlus ? `<button type="button" onclick="addRow('${cat.id}')" class="btn-plus">+ Wilayah</button>` : ''}
+                    </div>
+                    <div id="rows-${cat.id}" class="space-y-3 mb-4">
+                        ${formData[cat.id].rows.map((row, idx) => `
+                            <div class="row-region">
+                                <div>
+                                    <span class="field-label">Angka</span>
+                                    <input type="number" oninput="updateVal('${cat.id}', ${idx}, 'jml', this.value)" value="${row.jml}" class="w-full p-2.5 border rounded-xl text-xs font-black text-center outline-none focus:border-blue-500">
+                                </div>
+                                <div>
+                                    <span class="field-label">Wilayah</span>
+                                    <input type="text" 
+                                           oninput="updateVal('${cat.id}', ${idx}, 'ket', this.value)" 
+                                           value="${row.ket}" 
+                                           ${isLokal ? 'readonly class="w-full p-2.5 border rounded-xl text-[10px] font-black bg-slate-100 text-slate-400 outline-none cursor-not-allowed"' : 'class="w-full p-2.5 border rounded-xl text-[10px] font-bold bg-slate-50 outline-none focus:border-blue-500"'} 
+                                           placeholder="${isLokal ? '' : 'Cth: Jember'}">
+                                </div>
+                                <div class="pt-5 text-center">
+                                    ${idx > 0 && showPlus ? `<button type="button" onclick="removeRow('${cat.id}', ${idx})" class="text-red-300 font-bold hover:text-red-600">✕</button>` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <span class="field-label">Link Bukti Google Drive</span>
+                    <input type="text" oninput="formData['${cat.id}'].link = this.value" value="${formData[cat.id].link}" class="w-full p-3 border rounded-xl text-[9px] bg-blue-50/20">
+                </div>
+                `;
+            }).join('');
+        }
+
+        function addRow(id) { 
+            formData[id].rows.push({ jml: 0, ket: '' }); 
+            renderForm(); 
+        }
+        
+        function removeRow(id, idx) { 
+            formData[id].rows.splice(idx, 1); 
+            renderForm(); 
+            calculateWaterfall(); 
+        }
+        
+        function updateVal(id, idx, field, val) { 
+            formData[id].rows[idx][field] = field === 'jml' ? (parseInt(val) || 0) : val; 
+            calculateWaterfall(); 
+        }
+
+        function calculateWaterfall() {
+            const getSum = (id) => formData[id].rows.reduce((a, b) => a + b.jml, 0);
+            const totalMaba = getSum('lokal') + getSum('regional') + getSum('nasional') + getSum('internasional');
+            document.getElementById('tot-ts').innerText = totalMaba;
+            renderTable(serverData); 
+        }
+
+        // --- BACKEND LOAD & SAVE ---
+        async function loadData() {
+            if(!isLoggedIn) return;
+            const prodi = document.getElementById('id_prodi').value;
+            const tahun = document.getElementById('id_tahun').value;
+            
+            try {
+                // 1. Ambil Target Sinkron 2.A.1
+                const resSync = await fetch(`${API_2A1}/${prodi}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+                const resultSync = await resSync.json();
+                const currentSync = resultSync.data.find(d => d.tahun_akademik_id_tahun == tahun);
+                if(currentSync) {
+                    document.getElementById('target-maba').innerText = (currentSync.maba_reg_diterima + currentSync.maba_rpl_diterima);
+                    document.getElementById('target-afirmasi').innerText = (currentSync.maba_reg_afirmasi + currentSync.maba_rpl_afirmasi);
+                    document.getElementById('target-khusus').innerText = (currentSync.maba_reg_khusus + currentSync.maba_rpl_khusus);
+                } else {
+                    document.getElementById('target-maba').innerText = "0";
+                    document.getElementById('target-afirmasi').innerText = "0";
+                    document.getElementById('target-khusus').innerText = "0";
+                }
+
+                // 2. Ambil Data 2.A.2
+                const res = await fetch(`${API_2A2}/${prodi}/${tahun}`, { headers: { 'Authorization': `Bearer ${session.token}` } });
+                
+                if (!res.ok) throw new Error("404 Route Not Found");
+                
+                const result = await res.json();
+                serverData = result.data;
+
+                // 3. Map TS Data back to form for editing
+                if (serverData.length > 0) {
+                    currentRecordId = serverData[0].id_2a2; // simpan ID record aktif
+                    const ts = serverData[0].raw;
+                    categories.forEach(cat => {
+                        formData[cat.id].link = ts[cat.id].link || '';
+                        formData[cat.id].rows = ts[cat.id].rows || [{ jml: 0, ket: cat.id === 'lokal' ? 'Banyuwangi' : '' }];
+                    });
+                    renderForm();
+                } else {
+                    currentRecordId = null;
+                    categories.forEach(cat => {
+                        formData[cat.id].link = '';
+                        formData[cat.id].rows = [{ 
+                            jml: 0, 
+                            ket: cat.id === 'lokal' ? 'Banyuwangi' : '' 
+                        }];
+                    });
+                    renderForm();
+                }
+                
+                renderTable(serverData);
+                loadTrashCount();
+            } catch (e) { 
+                console.error(e.message); 
+                showAlert("Koneksi Gagal", "Gagal memuat data dari server. Pastikan data 2.A.1 tahun terpilih sudah ada!");
+            }
+        }
+
+        // --- RENDERING PREVIEW TABEL BERJENJANG (PRESISI LKPS SINKRON) ---
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            const rTS = data[0] || null;
+            const rTS1 = data[1] || null;
+            const rTS2 = data[2] || null;
+
+            // Helper Unpacking Data JSON
+            const safeParse = (str) => {
+                if (!str) return [];
+                try {
+                    const p = JSON.parse(str);
+                    if (Array.isArray(p)) return p;
+                } catch(e) {}
+                return [];
+            };
+
+            const getUniqueKeys = (field) => {
+                const keys = new Set();
+                [rTS, rTS1, rTS2].forEach(r => {
+                    if (r && r.raw && r.raw[field]) {
+                        r.raw[field].rows.forEach(x => {
+                            if (x.ket) keys.add(x.ket.trim());
+                        });
+                    }
+                });
+                return Array.from(keys);
+            };
+
+            const getValueForKey = (yearObj, field, key) => {
+                if (!yearObj || !yearObj.raw || !yearObj.raw[field]) return 0;
+                const found = yearObj.raw[field].rows.find(x => x.ket && x.ket.trim() === key);
+                return found ? (parseInt(found.jml) || 0) : 0;
+            };
+
+            // FUNGSI UNTUK GENERATE BARIS INDUK
+            const createParentRow = (label, ts2, ts1, ts, link) => {
+                tbody.innerHTML += `
+                    <tr class="bg-slate-100 font-bold border-y border-slate-200">
+                        <td class="text-left px-8 py-3 text-slate-800 uppercase text-[10px] tracking-tight font-black">${label}</td>
+                        <td class="val-cell text-slate-700">${ts2}</td>
+                        <td class="val-cell text-slate-700">${ts1}</td>
+                        <td class="val-cell ts-active font-black">${ts}</td>
+                        <td>
+                            ${link ? `<a href="${link}" target="_blank" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-[8px] font-bold inline-block hover:bg-blue-700 transition">Drive</a>` : '<span class="text-[8px] text-slate-300 font-bold uppercase">N/A</span>'}
+                        </td>
+                    </tr>
+                `;
+            };
+
+            // FUNGSI UNTUK GENERATE BARIS ANAK / BREAKDOWN (KUNING)
+            const createChildRow = (label, ts2, ts1, ts) => {
+                tbody.innerHTML += `
+                    <tr class="bg-yellow-50/50 border-b border-yellow-100/50">
+                        <td class="text-left px-12 py-2 text-slate-500 font-bold text-[10px] italic">↳ ${label}</td>
+                        <td class="val-cell text-slate-400 text-[10px] font-semibold">${ts2}</td>
+                        <td class="val-cell text-slate-400 text-[10px] font-semibold">${ts1}</td>
+                        <td class="val-cell text-slate-700 font-black text-[10px]">${ts}</td>
+                        <td></td>
+                    </tr>
+                `;
+            };
+
+            const getSum = (id) => formData[id].rows.reduce((a, b) => a + b.jml, 0);
+
+            // 1. Kota/Kab sama dengan PS
+            createParentRow(
+                'Kota/Kab sama dengan PS',
+                rTS2 ? rTS2.raw.lokal.jml : 0,
+                rTS1 ? rTS1.raw.lokal.jml : 0,
+                getSum('lokal'),
+                formData.lokal.link
+            );
+
+            // 2. Kota/Kabupaten Lain (Parent)
+            const regTS2 = rTS2 ? rTS2.raw.regional.jml : 0;
+            const regTS1 = rTS1 ? rTS1.raw.regional.jml : 0;
+            const regTS = getSum('regional') + getSum('nasional') + getSum('internasional');
+            createParentRow('Kota/Kabupaten Lain', regTS2, regTS1, regTS, formData.regional.link);
+
+            // 2b. Kota/Kabupaten Lain (Children)
+            getUniqueKeys('regional').forEach(key => {
+                createChildRow(
+                    key,
+                    getValueForKey(rTS2, 'regional', key),
+                    getValueForKey(rTS1, 'regional', key),
+                    formData.regional.rows.find(x => x.ket.trim() === key)?.jml || 0
+                );
+            });
+
+            // 3. Provinsi Lain (Parent)
+            const nasTS2 = rTS2 ? rTS2.raw.nasional.jml : 0;
+            const nasTS1 = rTS1 ? rTS1.raw.nasional.jml : 0;
+            const nasTS = getSum('nasional') + getSum('internasional');
+            createParentRow('Provinsi Lain', nasTS2, nasTS1, nasTS, formData.nasional.link);
+
+            // 3b. Provinsi Lain (Children)
+            getUniqueKeys('nasional').forEach(key => {
+                createChildRow(
+                    key,
+                    getValueForKey(rTS2, 'nasional', key),
+                    getValueForKey(rTS1, 'nasional', key),
+                    formData.nasional.rows.find(x => x.ket.trim() === key)?.jml || 0
+                );
+            });
+
+            // 4. Negara Lain (Parent)
+            const intTS2 = rTS2 ? rTS2.raw.internasional.jml : 0;
+            const intTS1 = rTS1 ? rTS1.raw.internasional.jml : 0;
+            const intTS = getSum('internasional');
+            createParentRow('Negara Lain', intTS2, intTS1, intTS, formData.internasional.link);
+
+            // 4b. Negara Lain (Children)
+            getUniqueKeys('internasional').forEach(key => {
+                createChildRow(
+                    key,
+                    getValueForKey(rTS2, 'internasional', key),
+                    getValueForKey(rTS1, 'internasional', key),
+                    formData.internasional.rows.find(x => x.ket.trim() === key)?.jml || 0
+                );
+            });
+
+            // 5. Afirmasi (Parent)
+            createParentRow(
+                'Afirmasi',
+                rTS2 ? rTS2.raw.afirmasi.jml : 0,
+                rTS1 ? rTS1.raw.afirmasi.jml : 0,
+                getSum('afirmasi'),
+                formData.afirmasi.link
+            );
+
+            // 5b. Afirmasi (Children)
+            getUniqueKeys('afirmasi').forEach(key => {
+                createChildRow(
+                    key,
+                    getValueForKey(rTS2, 'afirmasi', key),
+                    getValueForKey(rTS1, 'afirmasi', key),
+                    formData.afirmasi.rows.find(x => x.ket.trim() === key)?.jml || 0
+                );
+            });
+
+            // 6. Berkebutuhan Khusus (Parent)
+            createParentRow(
+                'Berkebutuhan Khusus',
+                rTS2 ? rTS2.raw.khusus.jml : 0,
+                rTS1 ? rTS1.raw.khusus.jml : 0,
+                getSum('khusus'),
+                formData.khusus.link
+            );
+
+            // 6b. Berkebutuhan Khusus (Children)
+            getUniqueKeys('khusus').forEach(key => {
+                createChildRow(
+                    key,
+                    getValueForKey(rTS2, 'khusus', key),
+                    getValueForKey(rTS1, 'khusus', key),
+                    formData.khusus.rows.find(x => x.ket.trim() === key)?.jml || 0
+                );
+            });
+
+            // Update Total Footer
+            const totTS2 = rTS2 ? ((parseInt(rTS2.raw.lokal.jml)||0) + (parseInt(rTS2.raw.regional.jml)||0) + (parseInt(rTS2.raw.nasional.jml)||0) + (parseInt(rTS2.raw.internasional.jml)||0)) : 0;
+            const totTS1 = rTS1 ? ((parseInt(rTS1.raw.lokal.jml)||0) + (parseInt(rTS1.raw.regional.jml)||0) + (parseInt(rTS1.raw.nasional.jml)||0) + (parseInt(rTS1.raw.internasional.jml)||0)) : 0;
+            const totTS = getSum('lokal') + getSum('regional') + getSum('nasional') + getSum('internasional');
+
+            document.getElementById('tot-ts2').innerText = totTS2;
+            document.getElementById('tot-ts1').innerText = totTS1;
+            document.getElementById('tot-ts').innerText = totTS;
+        }
+
+        async function saveData() {
+            if(!isLoggedIn) return;
+            const getSum = (id) => formData[id].rows.reduce((a, b) => a + b.jml, 0);
+            const getKet = (id) => formData[id].rows.map(r => r.ket).filter(Boolean).join(", ");
+            
+            const targetMaba = parseInt(document.getElementById('target-maba').innerText) || 0;
+            const targetAfirmasi = parseInt(document.getElementById('target-afirmasi').innerText) || 0;
+            const targetKhusus = parseInt(document.getElementById('target-khusus').innerText) || 0;
+
+            const totalIn = getSum('lokal') + getSum('regional') + getSum('nasional') + getSum('internasional');
+            const totalAfirmasi = getSum('afirmasi');
+            const totalKhusus = getSum('khusus');
+
+            if (totalIn !== targetMaba) {
+                showAlert("Gagal Sinkronisasi", `Total maba wilayah (${totalIn}) tidak sama dengan data 'Diterima' di Tabel 2.A.1 (${targetMaba}).`);
+                return;
+            }
+            if (totalAfirmasi !== targetAfirmasi) {
+                showAlert("Gagal Sinkronisasi", `Total afirmasi (${totalAfirmasi}) tidak sama dengan data di Tabel 2.A.1 (${targetAfirmasi}).`);
+                return;
+            }
+            if (totalKhusus !== targetKhusus) {
+                showAlert("Gagal Sinkronisasi", `Total berkebutuhan khusus (${totalKhusus}) tidak sama dengan data di Tabel 2.A.1 (${targetKhusus}).`);
+                return;
+            }
+
+            const payload = {
+                id_prodi: parseInt(document.getElementById('id_prodi').value),
+                id_tahun: parseInt(document.getElementById('id_tahun').value),
+                user_id: session.userId,
+                jml_lokal: getSum('lokal'), ket_lokal: JSON.stringify(formData.lokal.rows), link_lokal: formData.lokal.link,
+                jml_regional: getSum('regional'), ket_regional: JSON.stringify(formData.regional.rows), link_regional: formData.regional.link,
+                jml_nasional: getSum('nasional'), ket_nasional: JSON.stringify(formData.nasional.rows), link_nasional: formData.nasional.link,
+                jml_internasional: getSum('internasional'), ket_internasional: JSON.stringify(formData.internasional.rows), link_internasional: formData.internasional.link,
+                jml_afirmasi: getSum('afirmasi'), ket_afirmasi: JSON.stringify(formData.afirmasi.rows), link_afirmasi: formData.afirmasi.link,
+                jml_khusus: getSum('khusus'), ket_khusus: JSON.stringify(formData.khusus.rows), link_khusus: formData.khusus.link
+            };
+
+            const res = await fetch(`${API_2A2}/store`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            if(result.success) { 
+                loadData(); 
+                showAlert("Berhasil", "Data 2.A.2 telah disimpan dan disinkronkan."); 
+            } else { 
+                showAlert("Gagal Simpan", result.message); 
+            }
+        }
+
+        // --- MANAJEMEN TRASH (TEMPAT SAMPAH) & DELETE ---
+        function confirmSoftDelete() {
+            if (!currentRecordId) {
+                showAlert("Peringatan", "Tidak ada data aktif untuk tahun akademik terpilih yang dapat dihapus.");
+                return;
+            }
+            showAlert(
+                "Hapus Data Tahun Ini?", 
+                `Apakah Anda yakin ingin memindahkan data 2.A.2 tahun akademik berjalan ini ke tempat sampah?`,
+                async () => {
+                    try {
+                        const res = await fetch(`${API_2A2}/delete`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.token}` },
+                            body: JSON.stringify({ id_2a2: currentRecordId, user_id: session.userId })
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            loadData();
+                            showAlert("Berhasil", "Data dipindahkan ke Trash Bin.");
+                        } else {
+                            showAlert("Gagal", result.message);
+                        }
+                    } catch (err) {
+                        showAlert("Error", "Gagal memproses penghapusan.");
+                    }
+                }
+            );
+        }
+
+        async function openTrashModal() {
+            const prodi = document.getElementById('id_prodi').value;
+            const tbody = document.getElementById('trash-tbody');
+            tbody.innerHTML = '<tr><td colspan="3" class="py-10 text-slate-400 font-bold uppercase">Memuat Trash...</td></tr>';
+            document.getElementById('modal-trash').classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${API_2A2}/trash/${prodi}`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                
+                if (result.success && result.data.length > 0) {
+                    tbody.innerHTML = result.data.map(r => `
+                        <tr class="hover:bg-slate-50 border-b border-slate-100">
+                            <td class="py-4 font-bold text-slate-700">${r.tahun}/${parseInt(r.tahun)+1}</td>
+                            <td class="py-4 text-slate-400 font-medium">${new Date(r.pmb_deleted_at).toLocaleString('id-ID')}</td>
+                            <td class="py-4 flex gap-2 justify-center">
+                                <button onclick="restoreTrash(${r.id_2a2})" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase">Restore</button>
+                                <button onclick="hardDeleteTrash(${r.id_2a2})" class="bg-red-50 text-red-500 border border-red-200 px-3 py-1.5 rounded-lg font-bold text-[9px] uppercase hover:bg-red-600 hover:text-white transition">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="3" class="py-12 text-slate-300 font-black uppercase text-[10px] tracking-wider">Trash Kosong</td></tr>';
+                }
+            } catch (err) {
+                tbody.innerHTML = '<tr><td colspan="3" class="py-10 text-red-500 font-bold">Gagal mengambil data trash.</td></tr>';
+            }
+        }
+
+        function closeTrashModal() {
+            document.getElementById('modal-trash').classList.add('hidden');
+        }
+
+        async function restoreTrash(id) {
+            try {
+                const res = await fetch(`${API_2A2}/restore/${id}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                if (result.success) {
+                    openTrashModal();
+                    loadData();
+                } else {
+                    showAlert("Gagal", result.message);
+                }
+            } catch (err) {
+                showAlert("Error", "Gagal memulihkan data.");
+            }
+        }
+
+        async function hardDeleteTrash(id) {
+            showAlert(
+                "Hapus Permanen?", 
+                "Menghapus data secara permanen akan menghilangkan data tahun akademik ini dari sistem secara fisik. Lanjutkan?", 
+                async () => {
+                    try {
+                        const res = await fetch(`${API_2A2}/hard-delete/${id}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${session.token}` }
+                        });
+                        const result = await res.json();
+                        if (result.success) {
+                            openTrashModal();
+                            loadData();
+                        } else {
+                            showAlert("Gagal", result.message);
+                        }
+                    } catch (err) {
+                        showAlert("Error", "Gagal menghapus data secara permanen.");
+                    }
+                }
+            );
+        }
+
+        async function loadTrashCount() {
+            if(!isLoggedIn) return;
+            const prodi = document.getElementById('id_prodi').value;
+            try {
+                const res = await fetch(`${API_2A2}/trash/${prodi}`, {
+                    headers: { 'Authorization': `Bearer ${session.token}` }
+                });
+                const result = await res.json();
+                document.getElementById('trash-count').innerText = result.data ? result.data.length : 0;
+            } catch (err) { console.error(err); }
+        }
+
+        function exportExcel() {
+            window.open(`${API_2A2}/export/${document.getElementById('id_prodi').value}/${document.getElementById('id_tahun').value}?token=${session.token}`, '_blank');
+        }
+    </script>
+</body>
+</html>

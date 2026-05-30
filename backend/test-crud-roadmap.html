@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Master Roadmap LPPM</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f0f2f5; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { color: #2c3e50; border-bottom: 3px solid #8e44ad; padding-bottom: 10px; margin-top: 0; }
+        h3 { color: #8e44ad; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #eee; }
+        
+        .form-section { background: #fdfbf7; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #e9ecef; }
+        .input-group { margin-bottom: 15px; display: flex; flex-direction: column; }
+        .input-row { display: flex; gap: 15px; }
+        .input-row .input-group { flex: 1; }
+        label { margin-bottom: 5px; font-weight: 600; font-size: 14px; color: #495057; }
+        input[type="text"], input[type="number"], select { padding: 10px; border: 1px solid #ced4da; border-radius: 5px; font-size: 14px; transition: border-color 0.15s; }
+        input[type="text"]:focus, input[type="number"]:focus { border-color: #8e44ad; outline: 0; box-shadow: 0 0 0 0.2rem rgba(142,68,173,.25); }
+        
+        button { padding: 10px 15px; font-size: 14px; font-weight: 600; border-radius: 5px; cursor: pointer; border: none; color: white; }
+        .btn-login { background-color: #34495e; width: 100%; margin-top: 10px;}
+        .btn-submit { background-color: #8e44ad; width: 100%; margin-top: 10px;}
+        .btn-load { background-color: #2980b9; }
+        .btn-edit { background-color: #f39c12; padding: 5px 10px; font-size: 12px; }
+        .btn-delete { background-color: #e74c3c; padding: 5px 10px; font-size: 12px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        table, th, td { border: 1px solid #ddd; }
+        th, td { padding: 12px; text-align: left; }
+        th { background-color: #8e44ad; color: white; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+
+        .token-box { background: #e2e3e5; padding: 15px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #d6d8db; }
+        #response { margin-top: 15px; padding: 15px; border-radius: 8px; font-family: monospace; display: none; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+        /* Modal Edit */
+        #editModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 8px; width: 400px; }
+        .btn-close { background: #7f8c8d; margin-top: 10px; width: 100%; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🗺️ Master Data Roadmap LPPM</h1>
+    
+    <div class="token-box">
+        <h3>🔐 Login (Admin / LPPM)</h3>
+        <div class="input-row">
+            <div class="input-group">
+                <label>Username / Email</label>
+                <input type="text" id="username" placeholder="admin / user...">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" style="padding:10px; border:1px solid #ced4da; border-radius:5px;" placeholder="password...">
+            </div>
+        </div>
+        <button class="btn-login" onclick="doLogin()">Masuk & Ambil Token</button>
+        <div id="loginStatus" style="margin-top: 10px; font-size: 14px; font-weight: bold;"></div>
+        <input type="hidden" id="token">
+    </div>
+
+    <!-- CREATE FORM -->
+    <div class="form-section">
+        <h3>➕ Tambah Roadmap Baru</h3>
+        <form id="roadmapForm" onsubmit="createRoadmap(event)">
+            <div class="input-row">
+                <div class="input-group">
+                    <label>ID Prodi</label>
+                    <input type="number" id="c_prodi" required>
+                </div>
+                <div class="input-group">
+                    <label>Tahun Akademik</label>
+                    <input type="number" id="c_tahun" required>
+                </div>
+            </div>
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Jenis Roadmap</label>
+                    <select id="c_jenis">
+                        <option value="Penelitian">Penelitian</option>
+                        <option value="PkM">PkM</option>
+                        <option value="Penelitian dan PkM">Penelitian dan PkM</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Link Dokumen Roadmap</label>
+                    <input type="text" id="c_link" placeholder="https://..." required>
+                </div>
+            </div>
+            <button type="submit" class="btn-submit">Simpan Roadmap</button>
+        </form>
+        <div id="responseCreate" id="response" style="display:none; margin-top:10px; padding:10px; border-radius:5px;"></div>
+    </div>
+
+    <!-- READ / LIST DATA -->
+    <div class="form-section">
+        <h3>📋 Daftar Roadmap</h3>
+        <div class="input-row" style="align-items: flex-end;">
+            <div class="input-group" style="margin-bottom:0;">
+                <label>Filter ID Prodi</label>
+                <input type="number" id="f_prodi">
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+                <label>Filter ID Tahun</label>
+                <input type="number" id="f_tahun">
+            </div>
+            <div class="input-group" style="margin-bottom:0;">
+                <button class="btn-load" onclick="loadRoadmaps()">Tampilkan Data</button>
+            </div>
+        </div>
+        
+        <table id="dataTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tahun</th>
+                    <th>Jenis</th>
+                    <th>Link Dokumen</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Update -->
+<div id="editModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0;">✏️ Edit Roadmap</h3>
+        <input type="hidden" id="e_id">
+        <div class="input-group">
+            <label>Jenis Roadmap</label>
+            <select id="e_jenis">
+                <option value="Penelitian">Penelitian</option>
+                <option value="PkM">PkM</option>
+                <option value="Penelitian dan PkM">Penelitian dan PkM</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>Link Dokumen</label>
+            <input type="text" id="e_link">
+        </div>
+        <button class="btn-submit" onclick="updateRoadmap()">Simpan Perubahan</button>
+        <button class="btn-close" onclick="closeModal()">Batal</button>
+    </div>
+</div>
+
+<script>
+    const baseUrl = 'http://localhost:5000/api';
+
+    async function doLogin() {
+        const user = document.getElementById('username').value;
+        const pass = document.getElementById('password').value;
+        const stat = document.getElementById('loginStatus');
+        
+        stat.innerHTML = "Sedang login...";
+        stat.style.color = "blue";
+        
+        try {
+            const res = await fetch(`${baseUrl}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass })
+            });
+            const data = await res.json();
+            
+            if(res.ok && data.token) {
+                document.getElementById('token').value = data.token;
+                stat.innerHTML = "✅ Login Berhasil!";
+                stat.style.color = "green";
+            } else {
+                stat.innerHTML = "❌ Gagal: " + (data.message || "Username/Password salah");
+                stat.style.color = "red";
+            }
+        } catch(e) {
+            stat.innerHTML = "❌ Error jaringan: " + e.message;
+            stat.style.color = "red";
+        }
+    }
+
+    async function createRoadmap(e) {
+        e.preventDefault();
+        const token = document.getElementById('token').value;
+        if (!token) return alert("Harap Login terlebih dahulu!");
+
+        const payload = {
+            id_prodi: parseInt(document.getElementById('c_prodi').value),
+            id_tahun: parseInt(document.getElementById('c_tahun').value),
+            jenis_roadmap: document.getElementById('c_jenis').value,
+            link_dokumen: document.getElementById('c_link').value
+        };
+
+        const resDiv = document.getElementById('responseCreate');
+        resDiv.style.display = 'block';
+        resDiv.innerHTML = "Mengirim...";
+
+        try {
+            const res = await fetch(`${baseUrl}/lppm/roadmap-lppm`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if(res.ok && data.success) {
+                resDiv.className = 'success';
+                resDiv.innerHTML = "✅ Berhasil: " + data.message;
+                document.getElementById('roadmapForm').reset();
+                loadRoadmaps(); // refresh tabel
+            } else {
+                resDiv.className = 'error';
+                resDiv.innerHTML = "❌ Gagal: " + data.message;
+            }
+        } catch(e) {
+            resDiv.className = 'error';
+            resDiv.innerHTML = "❌ Error: " + e.message;
+        }
+    }
+
+    async function loadRoadmaps() {
+        const token = document.getElementById('token').value;
+        if (!token) return alert("Harap Login terlebih dahulu!");
+
+        const prodi = document.getElementById('f_prodi').value;
+        const tahun = document.getElementById('f_tahun').value;
+        
+        if(!prodi || !tahun) return alert("Isi Filter ID Prodi dan Tahun!");
+
+        try {
+            const res = await fetch(`${baseUrl}/lppm/roadmap-lppm?id_prodi=${prodi}&id_tahun=${tahun}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            
+            const tbody = document.getElementById('tableBody');
+            const table = document.getElementById('dataTable');
+            
+            if(data.success) {
+                tbody.innerHTML = '';
+                if(data.data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Tidak ada data Roadmap</td></tr>';
+                } else {
+                    data.data.forEach(item => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${item.id_roadmap}</td>
+                                <td>${item.id_tahun}</td>
+                                <td>${item.jenis_roadmap}</td>
+                                <td><a href="${item.link_dokumen}" target="_blank">Lihat</a></td>
+                                <td>
+                                    <button class="btn-edit" onclick="openModal(${item.id_roadmap}, '${item.jenis_roadmap}', '${item.link_dokumen}')">Edit</button>
+                                    <button class="btn-delete" onclick="deleteRoadmap(${item.id_roadmap})">Hapus</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
+                table.style.display = 'table';
+            }
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
+    }
+
+    // Modal Edit Logic
+    function openModal(id, jenis, link) {
+        document.getElementById('e_id').value = id;
+        document.getElementById('e_jenis').value = jenis;
+        document.getElementById('e_link').value = link;
+        document.getElementById('editModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    async function updateRoadmap() {
+        const token = document.getElementById('token').value;
+        const id = document.getElementById('e_id').value;
+        const payload = {
+            jenis_roadmap: document.getElementById('e_jenis').value,
+            link_dokumen: document.getElementById('e_link').value
+        };
+
+        try {
+            const res = await fetch(`${baseUrl}/lppm/roadmap-lppm/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert("Berhasil diupdate!");
+                closeModal();
+                loadRoadmaps();
+            } else {
+                alert("Gagal: " + data.message);
+            }
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
+    }
+
+    async function deleteRoadmap(id) {
+        if(!confirm("Yakin ingin menghapus roadmap ini? (Penelitian di dalamnya mungkin akan terdampak jika Anda merestrict Foreign Key)")) return;
+        
+        const token = document.getElementById('token').value;
+        try {
+            const res = await fetch(`${baseUrl}/lppm/roadmap-lppm/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const data = await res.json();
+            
+            if(data.success) {
+                alert("Berhasil dihapus!");
+                loadRoadmaps();
+            } else {
+                alert("Gagal: " + data.message);
+            }
+        } catch(e) {
+            alert("Error: " + e.message);
+        }
+    }
+</script>
+</body>
+</html>

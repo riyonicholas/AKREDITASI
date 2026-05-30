@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Alumni 2.B - Final Precision</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f6f9; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 25px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: center; }
+        th { background: #BFBFBF; font-size: 11px; text-transform: uppercase; }
+        .row-kuning { background: #FFFF00; }
+        
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        
+        button { padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-blue { background: #007bff; color: white; }
+        .btn-green { background: #28a745; color: white; }
+        .btn-gold { background: #ffc107; color: black; }
+        .btn-red { background: #dc3545; color: white; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        button:hover:not(:disabled) { opacity: 0.8; }
+
+        .trash-area { border: 2px dashed #dc3545; padding: 20px; background: #fff5f5; margin-top: 50px; border-radius: 10px; }
+        .warning-box { background: #fff3cd; color: #856404; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 5px solid #ffc107; }
+        
+        .status-badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+        .status-ok { color: #28a745; }
+        .status-error { color: #dc3545; }
+        
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="header-flex">
+        <h2>🚀 Dashboard Alumni Terpadu (2.B.4 & 2.B.5)</h2>
+        <div style="display: flex; gap: 10px;">
+            <button onclick="exportExcel('2b4')" class="btn-gold">📥 Export 2.B.4</button>
+            <button onclick="exportExcel('2b5')" class="btn-gold">📥 Export 2.B.5</button>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; margin-top: 15px;">
+        <input type="text" id="u" placeholder="Username (MHS)" style="width: 150px; margin:0">
+        <input type="password" id="p" placeholder="Password" style="width: 150px; margin:0">
+        <button onclick="login()" class="btn-blue">🔑 Login</button>
+        <div style="flex-grow: 1;"></div>
+        <label style="align-self: center;">Prodi ID:</label> <input type="number" id="f_prodi" value="1" style="width: 60px; margin:0">
+        <label style="align-self: center;">Tahun (TS):</label> <input type="number" id="f_tahun" value="3" style="width: 60px; margin:0">
+        <button onclick="refresh()" class="btn-green">🔄 Muat Data</button>
+    </div>
+
+    <!-- FORM INPUT TERPADU -->
+    <div class="card" style="border: 2px solid #007bff; margin-top: 20px;">
+        <h3 style="margin-top:0">📝 Formulir Pengisian Satu Pintu</h3>
+        <div id="validation-msg" class="warning-box">Lengkapi data untuk memulai validasi.</div>
+        
+        <input type="hidden" id="id_2b4">
+        <input type="hidden" id="id_2b5">
+        
+        <div class="grid">
+            <div style="border-right: 1px solid #eee; padding-right: 15px;">
+                <p><b>A. Data Populasi & Waktu Tunggu (2.B.4)</b></p>
+                <label>Jumlah Terlacak (Target): <span id="target-terlacak" style="font-weight: bold;">0</span></label>
+                <input type="number" id="jml_track" placeholder="Masukkan Jumlah Terlacak" oninput="validateMath()">
+                <input type="number" id="jml_lulus" placeholder="Jumlah Total Lulusan">
+                <input type="number" id="tunggu" step="0.01" placeholder="Rata-rata Masa Tunggu (Bulan)">
+            </div>
+            <div>
+                <p><b>B. Data Kesesuaian & Lingkup Kerja (2.B.5)</b></p>
+                <div style="margin-bottom: 10px;">
+                    Profesi: <span id="math-profesi" class="status-error">0</span> / <span class="v-target">0</span>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="number" id="p_info" placeholder="Infokom" oninput="validateMath()">
+                        <input type="number" id="p_non" placeholder="Non-Infokom" oninput="validateMath()">
+                    </div>
+                </div>
+                <div>
+                    Lingkup: <span id="math-lingkup" class="status-error">0</span> / <span class="v-target">0</span>
+                    <div style="display: flex; gap: 5px;">
+                        <input type="number" id="l_multi" placeholder="Multi" oninput="validateMath()">
+                        <input type="number" id="l_nas" placeholder="Nasional" oninput="validateMath()">
+                        <input type="number" id="l_wira" placeholder="Wirausaha" oninput="validateMath()">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button onclick="simpan()" id="btn-save" class="btn-blue" style="width: 100%; margin-top: 15px;" disabled>💾 Simpan Data (Data Belum Balance)</button>
+        <button onclick="reset()" style="width: 100%; margin-top: 5px; background: #6c757d; color: white;">❌ Batal / Bersihkan Form</button>
+    </div>
+</div>
+
+<!-- DATA AKTIF -->
+<h3>Preview Tabel 2.B.4 (Masa Tunggu)</h3>
+<table id="t2b4">
+    <thead><tr><th>Tahun Lulus</th><th>Lulusan</th><th>Terlacak</th><th>Waktu (Bulan)</th><th>Aksi</th></tr></thead>
+    <tbody></tbody>
+</table>
+
+<h3 style="margin-top: 40px;">Preview Tabel 2.B.5 (Kesesuaian Kerja)</h3>
+<table id="t2b5">
+    <thead>
+        <tr><th rowspan="2">Tahun Lulus</th><th rowspan="2">Lulusan</th><th rowspan="2">Terlacak</th><th colspan="2">Profesi Kerja</th><th colspan="3">Lingkup Kerja</th><th rowspan="2">Aksi</th></tr>
+        <tr><th>Info</th><th>Non</th><th>Multi</th><th>Nasional</th><th>Wira</th></tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<!-- RECYCLE BIN -->
+<div class="trash-area">
+    <h3 style="color: #dc3545; margin-top: 0;">🗑️ Keranjang Sampah (Recycle Bin)</h3>
+    <div class="grid">
+        <div>
+            <p><b>Sampah 2.B.4 (Populasi)</b></p>
+            <table style="background: white; font-size: 12px;">
+                <thead><tr><th>Tahun</th><th>Aksi</th></tr></thead>
+                <tbody id="trash-2b4"></tbody>
+            </table>
+        </div>
+        <div>
+            <p><b>Sampah 2.B.5 (Pekerjaan)</b></p>
+            <table style="background: white; font-size: 12px;">
+                <thead><tr><th>Tahun</th><th>Aksi</th></tr></thead>
+                <tbody id="trash-2b5"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API = 'http://localhost:5000/api/kemahasiswaan';
+    let token = localStorage.getItem('token') || '';
+
+    async function login() {
+        const res = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: document.getElementById('u').value, password: document.getElementById('p').value })
+        });
+        const d = await res.json();
+        if(d.success) { token = d.token; localStorage.setItem('token', token); alert("Login Berhasil!"); refresh(); }
+        else alert("Login Gagal: " + d.message);
+    }
+
+    function refresh() { 
+        if(!token) return;
+        ambil2b4(); ambil2b5(); ambilSampah(); 
+    }
+
+    async function ambil2b4() {
+        const pid = document.getElementById('f_prodi').value;
+        const tid = document.getElementById('f_tahun').value;
+        const res = await fetch(`${API}/2b4-masa-tunggu?id_prodi=${pid}&id_tahun=${tid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const r = await res.json();
+        document.querySelector('#t2b4 tbody').innerHTML = r.data.map(d => `
+            <tr class="row-kuning">
+                <td>${d.nama_tahun}</td><td>${d.jumlah_lulusan}</td><td>${d.jumlah_terlacak}</td><td>${d.rata_tunggu}</td>
+                <td>
+                    <button onclick='editFull(${JSON.stringify(d)})' class="btn-gold" style="padding:4px 8px;">Edit</button>
+                    <button onclick="hapusSoft('2b4-masa-tunggu', ${d.id_2b4})" class="btn-red" style="padding:4px 8px;">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function ambil2b5() {
+        const pid = document.getElementById('f_prodi').value;
+        const tid = document.getElementById('f_tahun').value;
+        const res = await fetch(`${API}/2b5-kesesuaian-kerja?id_prodi=${pid}&id_tahun=${tid}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const r = await res.json();
+        document.querySelector('#t2b5 tbody').innerHTML = r.data.map(d => `
+            <tr class="row-kuning">
+                <td>${d.nama_tahun}</td><td>${d.jumlah_lulusan}</td><td>${d.jumlah_terlacak}</td>
+                <td>${d.profesi_infokom}</td><td>${d.profesi_non_infokom}</td><td>${d.lingkup_multinasional}</td><td>${d.lingkup_nasional}</td><td>${d.lingkup_wirausaha}</td>
+                <td>
+                    <button onclick='editFull(${JSON.stringify(d)})' class="btn-gold" style="padding:4px 8px;">Edit</button>
+                    <button onclick="hapusSoft('2b5-kesesuaian-kerja', ${d.id_2b5})" class="btn-red" style="padding:4px 8px;">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function ambilSampah() {
+        const pid = document.getElementById('f_prodi').value;
+        const r4 = await fetch(`${API}/2b4-masa-tunggu/trash?id_prodi=${pid}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+        const r5 = await fetch(`${API}/2b5-kesesuaian-kerja/trash?id_prodi=${pid}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+        
+        document.getElementById('trash-2b4').innerHTML = r4.data.map(d => `
+            <tr><td>${d.nama_tahun}</td><td>
+                <button onclick="restore('2b4-masa-tunggu', ${d.id_2b4})" class="btn-green" style="padding:2px 5px; font-size:10px;">Restore</button>
+                <button onclick="hardDelete('2b4-masa-tunggu', ${d.id_2b4})" class="btn-red" style="padding:2px 5px; font-size:10px;">Permanen</button>
+            </td></tr>`).join('');
+        document.getElementById('trash-2b5').innerHTML = r5.data.map(d => `
+            <tr><td>${d.nama_tahun}</td><td>
+                <button onclick="restore('2b5-kesesuaian-kerja', ${d.id_2b5})" class="btn-green" style="padding:2px 5px; font-size:10px;">Restore</button>
+                <button onclick="hardDelete('2b5-kesesuaian-kerja', ${d.id_2b5})" class="btn-red" style="padding:2px 5px; font-size:10px;">Permanen</button>
+            </td></tr>`).join('');
+    }
+
+    async function simpan() {
+        const i4 = document.getElementById('id_2b4').value;
+        const i5 = document.getElementById('id_2b5').value;
+        const b4 = { 
+            id_prodi: document.getElementById('f_prodi').value, 
+            id_tahun: document.getElementById('f_tahun').value, 
+            jumlah_lulusan: document.getElementById('jml_lulus').value, 
+            jumlah_terlacak: document.getElementById('jml_track').value, 
+            rata_tunggu: document.getElementById('tunggu').value 
+        };
+        
+        const res4 = await fetch(i4 ? `${API}/2b4-masa-tunggu/${i4}` : `${API}/2b4-masa-tunggu`, { 
+            method: i4 ? 'PUT' : 'POST', 
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+            body: JSON.stringify(b4) 
+        }).then(r => r.json());
+        
+        if(res4.success) {
+            const b5 = { 
+                id_2b4: i4 || res4.id_2b4, 
+                profesi_infokom: document.getElementById('p_info').value, 
+                profesi_non_infokom: document.getElementById('p_non').value, 
+                lingkup_multinasional: document.getElementById('l_multi').value, 
+                lingkup_nasional: document.getElementById('l_nas').value, 
+                lingkup_wirausaha: document.getElementById('l_wira').value 
+            };
+            const res5 = await fetch(i5 ? `${API}/2b5-kesesuaian-kerja/${i5}` : `${API}/2b5-kesesuaian-kerja`, { 
+                method: i5 ? 'PUT' : 'POST', 
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, 
+                body: JSON.stringify(b5) 
+            }).then(r => r.json());
+            
+            if(res5.success) { alert("Data Tersimpan & Sinkron!"); reset(); refresh(); }
+            else alert("Error 2.B.5: " + res5.message);
+        } else alert("Error 2.B.4: " + res4.message);
+    }
+
+    async function editFull(d) {
+        document.getElementById('id_2b4').value = d.id_2b4;
+        document.getElementById('jml_lulus').value = d.jumlah_lulusan;
+        document.getElementById('jml_track').value = d.jumlah_terlacak;
+        document.getElementById('tunggu').value = d.rata_tunggu;
+        
+        // Ambil detail 2B5
+        const r5 = await fetch(`${API}/2b5-kesesuaian-kerja?id_prodi=${document.getElementById('f_prodi').value}&id_tahun=${d.id_tahun}`, { headers: { 'Authorization': `Bearer ${token}` } }).then(r => r.json());
+        const d5 = r5.data.find(x => x.id_2b4 === d.id_2b4);
+        if(d5) {
+            document.getElementById('id_2b5').value = d5.id_2b5;
+            document.getElementById('p_info').value = d5.profesi_infokom;
+            document.getElementById('p_non').value = d5.profesi_non_infokom;
+            document.getElementById('l_multi').value = d5.lingkup_multinasional;
+            document.getElementById('l_nas').value = d5.lingkup_nasional;
+            document.getElementById('l_wira').value = d5.lingkup_wirausaha;
+        }
+        validateMath();
+        window.scrollTo(0,0);
+        document.getElementById('btn-save').innerText = "🆙 Update Data Sinkron";
+    }
+
+    async function hapusSoft(path, id) {
+        if(confirm("Pindahkan ke sampah?")) {
+            await fetch(`${API}/${path}/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            refresh();
+        }
+    }
+
+    async function restore(path, id) {
+        await fetch(`${API}/${path}/restore/${id}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+        refresh();
+    }
+
+    async function hardDelete(path, id) {
+        if(confirm("HAPUS SELAMANYA? Data tidak bisa dipulihkan kembali.")) {
+            await fetch(`${API}/${path}/hard/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
+            refresh();
+        }
+    }
+
+    function validateMath() {
+        const target = parseInt(document.getElementById('jml_track').value) || 0;
+        const p_i = parseInt(document.getElementById('p_info').value) || 0;
+        const p_n = parseInt(document.getElementById('p_non').value) || 0;
+        const l_m = parseInt(document.getElementById('l_multi').value) || 0;
+        const l_n = parseInt(document.getElementById('l_nas').value) || 0;
+        const l_w = parseInt(document.getElementById('l_wira').value) || 0;
+
+        const sumP = p_i + p_n;
+        const sumL = l_m + l_n + l_w;
+
+        document.getElementById('target-terlacak').innerText = target;
+        document.querySelectorAll('.v-target').forEach(e => e.innerText = target);
+        
+        const mP = document.getElementById('math-profesi'); mP.innerText = sumP; mP.className = sumP === target ? 'status-ok' : 'status-error';
+        const mL = document.getElementById('math-lingkup'); mL.innerText = sumL; mL.className = sumL === target ? 'status-ok' : 'status-error';
+
+        const btn = document.getElementById('btn-save');
+        const isValid = (target > 0 && sumP === target && sumL === target);
+        btn.disabled = !isValid;
+        btn.innerText = isValid ? "💾 Simpan Data Balance" : "💾 Simpan (Data Belum Balance)";
+        
+        const vBox = document.getElementById('validation-msg');
+        if(isValid) { vBox.style.display = 'none'; }
+        else {
+            vBox.style.display = 'block';
+            vBox.innerText = `⚠️ Aturan: (Profesi: ${sumP}/${target}) dan (Lingkup: ${sumL}/${target}) harus sama dengan Terlacak.`;
+        }
+    }
+
+    function exportExcel(type) {
+        if(!token) return alert("Login dulu Bos!");
+        const pid = document.getElementById('f_prodi').value;
+        const tid = document.getElementById('f_tahun').value;
+        const path = type === '2b4' ? '2b4-masa-tunggu' : '2b5-kesesuaian-kerja';
+        window.open(`${API}/${path}/export?id_prodi=${pid}&id_tahun=${tid}&token=${token}`);
+    }
+
+    function reset() {
+        document.getElementById('id_2b4').value = ''; document.getElementById('id_2b5').value = '';
+        document.getElementById('btn-save').innerText = "💾 Simpan Data Balance";
+        document.querySelectorAll('input').forEach(i => { if(!['f_prodi','f_tahun','u','p'].includes(i.id)) i.value = ''; });
+        validateMath();
+    }
+</script>
+</body>
+</html>
