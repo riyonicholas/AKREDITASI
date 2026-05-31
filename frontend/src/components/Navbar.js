@@ -250,10 +250,21 @@ function NavbarContent() {
     const activeTabKey = pathname.startsWith("/tabel/") ? pathname.replace("/tabel/", "") : "";
     const activeKategoriBerita = searchParams?.get('kategori') || 'Semua';
 
+    // Saring menu berdasarkan unit kerja (RBAC)
+    const userUnit = user?.unit ? user.unit.trim().toUpperCase() : "";
+
+    const filteredGroupedMenusTabel = GROUPED_MENUS_TABEL.filter(group => {
+        const groupName = group.group.trim().toUpperCase();
+        if (userUnit === 'ADMIN' || userUnit === 'ADMINISTRATOR') return true;
+        return groupName === userUnit;
+    });
+
+    const filteredFlatMenusTabel = filteredGroupedMenusTabel.flatMap(g => g.items);
+
     // Fetch counts untuk tabel jika di halaman tabel (memakai react-query yang mencache respon agar efisien)
     // Menggunakan useQueries (bukan useQuery di dalam loop) untuk mematuhi Rules of Hooks
     const queryResults = useQueries({
-        queries: FLAT_MENUS_TABEL.map(m => ({
+        queries: filteredFlatMenusTabel.map(m => ({
             queryKey: [m.key],
             queryFn: () => createService(m.key).getAll(),
             select: (res) => res.data?.length ?? (res.data ? 1 : 0),
@@ -262,7 +273,7 @@ function NavbarContent() {
     });
 
     const counts = {};
-    FLAT_MENUS_TABEL.forEach((m, idx) => {
+    filteredFlatMenusTabel.forEach((m, idx) => {
         counts[m.key] = queryResults[idx].data ?? 0;
     });
     const totalSemuaData = Object.values(counts).reduce((a, n) => a + n, 0);
@@ -423,7 +434,7 @@ function NavbarContent() {
                             {isTabel && (
                                 <div className="flex flex-col flex-1 pl-1 overflow-y-auto pr-2 custom-scrollbar pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#38bdf8 transparent' }}>
                                     <nav className="flex flex-col gap-4">
-                                        {GROUPED_MENUS_TABEL.map((group, gIdx) => {
+                                        {filteredGroupedMenusTabel.map((group, gIdx) => {
                                             const isOpen = openGroups[group.group] ?? false;
                                             return (
                                                 <div key={gIdx} className="flex flex-col gap-0.5">

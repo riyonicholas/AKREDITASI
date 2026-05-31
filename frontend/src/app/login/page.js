@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
+  const { login } = useAuth();
   // ── STATE (tidak diubah) ──────────────────────────────────────────
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -28,8 +30,7 @@ export default function LoginPage() {
       const result = await res.json();
 
       if (result.success) {
-        localStorage.setItem('token', result.token);
-        localStorage.setItem('user', JSON.stringify(result.user || {}));
+        login(result.user || {}, result.token);
         router.push('/dashboard');
       } else {
         setError(result.message || 'Login gagal');
