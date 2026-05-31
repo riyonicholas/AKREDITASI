@@ -7,9 +7,9 @@ export default function LoginPage() {
   // ── STATE (tidak diubah) ──────────────────────────────────────────
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
-  const [showPw, setShowPw]     = useState(false);   // tambahan UI saja
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);   // tambahan UI saja
   const router = useRouter();
 
   // ── HANDLER LOGIN (tidak diubah) ─────────────────────────────────
@@ -48,26 +48,26 @@ export default function LoginPage() {
       style={{ background: '#f0f4f8', fontFamily: 'var(--font-montserrat), Inter, sans-serif' }}
     >
       <div className="w-full max-w-[1000px] bg-white rounded-3xl overflow-hidden flex flex-col md:flex-row min-h-[560px]"
-           style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.10)' }}>
+        style={{ boxShadow: '0 20px 60px rgba(0,0,0,0.10)' }}>
 
         {/* ── PANEL KIRI — Branding ────────────────────────────────── */}
         <div className="w-full md:w-[45%] flex flex-col relative overflow-hidden text-white p-10 md:p-12"
-             style={{ background: '#08428c' }}>
+          style={{ background: '#08428c' }}>
 
           {/* Dekorasi geometri */}
           <div className="absolute -top-20 -left-20 w-64 h-64 rounded-full"
-               style={{ background: 'rgba(255,255,255,0.05)', filter: 'blur(32px)' }} />
+            style={{ background: 'rgba(255,255,255,0.05)', filter: 'blur(32px)' }} />
           <div className="absolute -bottom-32 -right-20 w-80 h-80 rounded-full"
-               style={{ border: '40px solid rgba(255,255,255,0.05)', filter: 'blur(12px)' }} />
+            style={{ border: '40px solid rgba(255,255,255,0.05)', filter: 'blur(12px)' }} />
           <div className="absolute top-1/4 -right-20 w-40 h-40 rounded-full"
-               style={{ border: '20px solid rgba(255,255,255,0.05)', filter: 'blur(6px)' }} />
+            style={{ border: '20px solid rgba(255,255,255,0.05)', filter: 'blur(6px)' }} />
 
           {/* Logo & nama institusi */}
           <div className="relative z-10 flex items-center gap-3 mb-12">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-[#0f172a] flex-shrink-0"
-                 style={{ background: '#facc15' }}>
+              style={{ background: '#facc15' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9z"/>
+                <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9z" />
               </svg>
             </div>
             <span className="font-bold tracking-wide" style={{ fontSize: '1.05rem' }}>STIKOM PGRI</span>
@@ -76,7 +76,7 @@ export default function LoginPage() {
           {/* Tagline */}
           <div className="relative z-10 flex-1 flex flex-col justify-center">
             <h1 className="font-black leading-tight m-0 mb-6"
-                style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', lineHeight: 1.15 }}>
+              style={{ fontSize: 'clamp(1.8rem, 3vw, 2.5rem)', lineHeight: 1.15 }}>
               Sistem Informasi<br />
               <span style={{ color: '#facc15' }}>Akreditasi STIKOM</span><br />
               Banyuwangi.
@@ -87,7 +87,7 @@ export default function LoginPage() {
 
             {/* Badge versi */}
             <div className="mt-8 inline-flex items-center gap-2 px-3 py-1.5 rounded-full w-fit"
-                 style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', color: '#93c5fd' }}>
+              style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.15)', fontSize: '0.72rem', color: '#93c5fd' }}>
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: '#4ade80' }} />
               Sistem Akreditasi v2.1
             </div>
@@ -95,7 +95,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="relative z-10 mt-12 flex items-center gap-2"
-               style={{ fontSize: '0.72rem', color: '#93c5fd', fontWeight: 500 }}>
+            style={{ fontSize: '0.72rem', color: '#93c5fd', fontWeight: 500 }}>
             <span>© 2026 STIKOM PGRI Banyuwangi</span>
             <span>•</span>
             <span>Pusat Informasi</span>
@@ -125,7 +125,7 @@ export default function LoginPage() {
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex' }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
                 <input
@@ -148,7 +148,7 @@ export default function LoginPage() {
                     transition: 'all 0.2s',
                   }}
                   onFocus={e => { e.target.style.background = '#fff'; e.target.style.borderColor = '#38bdf8'; e.target.style.boxShadow = '0 0 0 4px rgba(56,189,248,0.10)'; }}
-                  onBlur={e  => { e.target.style.background = '#f4f7fb'; e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; }}
+                  onBlur={e => { e.target.style.background = '#f4f7fb'; e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; }}
                 />
               </div>
             </div>
@@ -160,15 +160,15 @@ export default function LoginPage() {
                   Kata Sandi
                 </label>
                 <a href="#" style={{ fontSize: '0.68rem', fontWeight: 700, color: '#08428c', textDecoration: 'none' }}
-                   onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-                   onMouseLeave={e => e.target.style.textDecoration = 'none'}>
+                  onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                  onMouseLeave={e => e.target.style.textDecoration = 'none'}>
                   Lupa Password?
                 </a>
               </div>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex' }}>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                 </span>
                 <input
@@ -192,7 +192,7 @@ export default function LoginPage() {
                     transition: 'all 0.2s',
                   }}
                   onFocus={e => { e.target.style.background = '#fff'; e.target.style.borderColor = '#38bdf8'; e.target.style.boxShadow = '0 0 0 4px rgba(56,189,248,0.10)'; }}
-                  onBlur={e  => { e.target.style.background = '#f4f7fb'; e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; }}
+                  onBlur={e => { e.target.style.background = '#f4f7fb'; e.target.style.borderColor = 'transparent'; e.target.style.boxShadow = 'none'; }}
                 />
                 {/* Toggle password visibility */}
                 <button
@@ -209,13 +209,13 @@ export default function LoginPage() {
                 >
                   {showPw ? (
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                      <line x1="2" y1="2" x2="22" y2="22"/>
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                      <line x1="2" y1="2" x2="22" y2="22" />
                     </svg>
                   ) : (
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>
+                      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" />
                     </svg>
                   )}
                 </button>
@@ -241,7 +241,7 @@ export default function LoginPage() {
                 fontSize: '0.82rem', color: '#dc2626', fontWeight: 600,
               }}>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
                 {error}
               </div>
@@ -270,7 +270,7 @@ export default function LoginPage() {
                 boxShadow: '0 4px 15px rgba(8,66,140,0.20)',
                 transform: 'translateY(0)',
               }}
-              onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = '#06336e'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(8,66,140,0.30)'; }}}
+              onMouseEnter={e => { if (!loading) { e.currentTarget.style.background = '#06336e'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(8,66,140,0.30)'; } }}
               onMouseLeave={e => { e.currentTarget.style.background = loading ? '#94a3b8' : '#08428c'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 15px rgba(8,66,140,0.20)'; }}
             >
               {loading ? (
@@ -288,7 +288,7 @@ export default function LoginPage() {
                 <>
                   <span>Masuk ke Sistem</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                    <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
                   </svg>
                 </>
               )}
@@ -300,8 +300,8 @@ export default function LoginPage() {
             <p style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500, margin: 0 }}>
               Belum memiliki akun?{' '}
               <a href="#" style={{ color: '#08428c', fontWeight: 700, textDecoration: 'none' }}
-                 onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-                 onMouseLeave={e => e.target.style.textDecoration = 'none'}>
+                onMouseEnter={e => e.target.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.target.style.textDecoration = 'none'}>
                 Hubungi Administrasi Kampus
               </a>
             </p>
