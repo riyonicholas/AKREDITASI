@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, Map, Calendar, Link as LinkIc
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function RoadmapPage() {
   const router = useRouter();
@@ -112,11 +113,11 @@ export default function RoadmapPage() {
         body: JSON.stringify(formData),
       });
       const result = await res.json();
-      alert(result.message);
+      showSuccess(result.message);
       if (filterProdi && filterTahun) fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -132,7 +133,8 @@ export default function RoadmapPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Pindahkan data ke tempat sampah?')) return;
+    const isConfirmed = await showConfirm('Pindahkan data ke tempat sampah?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/lppm/roadmap-lppm/${id}`, {
@@ -140,10 +142,10 @@ export default function RoadmapPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      showSuccess(result.message);
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 

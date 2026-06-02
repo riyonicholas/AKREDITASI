@@ -35,17 +35,17 @@ export default function ProfilePage() {
   const handleSave = (e) => {
     e.preventDefault();
     setIsSaving(true);
-    
+
     // Simulasi request ke backend
     setTimeout(() => {
       setIsSaving(false);
       setShowSuccess(true);
-      
+
       // Sembunyikan notifikasi setelah 3 detik
       setTimeout(() => setShowSuccess(false), 3000);
-      
+
       if (activeTab === 'keamanan') {
-        setFormData(prev => ({...prev, oldPassword: '', newPassword: '', confirmPassword: ''}));
+        setFormData(prev => ({ ...prev, oldPassword: '', newPassword: '', confirmPassword: '' }));
       }
     }, 1000);
   };
@@ -68,7 +68,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="w-full p-6 md:p-10">
-        
+
         {/* Notifikasi Sukses Mengambang */}
         {showSuccess && (
           <div className="fixed top-8 right-8 z-50 bg-emerald-50 border border-emerald-200 text-emerald-700 px-6 py-4 rounded-2xl shadow-xl shadow-emerald-900/10 flex items-center gap-3 animate-in slide-in-from-top-10 fade-in duration-300">
@@ -81,12 +81,12 @@ export default function ProfilePage() {
         )}
 
         <div className="flex flex-col lg:flex-row gap-8">
-          
+
           {/* KIRI: Kartu Profil Utama */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6">
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 text-center relative overflow-hidden group">
               <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-[#1E3A8A] to-blue-500"></div>
-              
+
               <div className="relative z-10 flex flex-col items-center mt-10">
                 <div className="w-32 h-32 bg-white rounded-full p-2 shadow-xl mb-4 relative">
                   <div className="w-full h-full bg-[#facc15] rounded-full flex items-center justify-center text-4xl font-black text-slate-900">
@@ -96,15 +96,15 @@ export default function ProfilePage() {
                     <Camera size={14} />
                   </button>
                 </div>
-                
+
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">{formData.username}</h2>
                 <p className="text-slate-500 font-bold mb-4">{formData.email}</p>
-                
+
                 <div className="inline-block px-4 py-1.5 bg-blue-50 text-blue-700 font-black text-xs uppercase tracking-widest rounded-full border border-blue-100">
                   {user?.role || 'Administrator'}
                 </div>
               </div>
-              
+
               <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col gap-3 text-left">
                 <div className="flex justify-between items-center text-sm">
                   <span className="text-slate-500 font-bold">Unit Pengelola</span>
@@ -119,14 +119,14 @@ export default function ProfilePage() {
 
             {/* Menu Navigasi Samping */}
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-slate-200 flex flex-col gap-2">
-              <button 
+              <button
                 onClick={() => setActiveTab('profil')}
                 className={`flex items-center gap-3 px-5 py-4 rounded-2xl font-bold transition-all ${activeTab === 'profil' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
               >
                 <User size={20} />
                 Informasi Personal
               </button>
-              <button 
+              <button
                 onClick={() => setActiveTab('keamanan')}
                 className={`flex items-center gap-3 px-5 py-4 rounded-2xl font-bold transition-all ${activeTab === 'keamanan' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
               >
@@ -139,7 +139,7 @@ export default function ProfilePage() {
           {/* KANAN: Form Area */}
           <div className="w-full lg:w-2/3">
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
-              
+
               {activeTab === 'profil' && (
                 <div className="animate-in fade-in duration-500">
                   <div className="mb-8 pb-6 border-b border-slate-100">
@@ -155,27 +155,27 @@ export default function ProfilePage() {
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <User className="text-slate-400" size={18} />
                           </div>
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             value={formData.username}
-                            onChange={(e) => setFormData({...formData, username: e.target.value})}
-                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900" 
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900"
                             required
                           />
                         </div>
                       </div>
-                      
+
                       <div>
                         <label className="block text-sm font-bold text-slate-600 mb-2">Alamat Email</label>
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <Mail className="text-slate-400" size={18} />
                           </div>
-                          <input 
-                            type="email" 
+                          <input
+                            type="email"
                             value={formData.email}
-                            onChange={(e) => setFormData({...formData, email: e.target.value})}
-                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900" 
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900"
                             required
                           />
                         </div>
@@ -183,20 +183,20 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-sm font-bold text-slate-600 mb-2">Unit Kerja (UPPS / Prodi)</label>
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           value={formData.unit}
                           disabled
-                          className="w-full px-4 py-3.5 bg-slate-100 border border-slate-200 rounded-2xl outline-none font-bold text-slate-500 cursor-not-allowed" 
+                          className="w-full px-4 py-3.5 bg-slate-100 border border-slate-200 rounded-2xl outline-none font-bold text-slate-500 cursor-not-allowed"
                           title="Unit kerja hanya dapat diubah oleh Super Admin"
                         />
                         <p className="text-[11px] font-bold text-slate-400 mt-2">*Unit kerja dikelola oleh Administrator sistem.</p>
                       </div>
                     </div>
-                    
+
                     <div className="pt-6 mt-8 border-t border-slate-100 flex justify-end">
-                      <button 
-                        type="submit" 
+                      <button
+                        type="submit"
                         disabled={isSaving}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-xl font-black uppercase tracking-wider text-xs shadow-lg shadow-blue-600/20 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                       >
@@ -223,11 +223,11 @@ export default function ProfilePage() {
                           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                             <Key className="text-slate-400" size={18} />
                           </div>
-                          <input 
-                            type="password" 
+                          <input
+                            type="password"
                             value={formData.oldPassword}
-                            onChange={(e) => setFormData({...formData, oldPassword: e.target.value})}
-                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900" 
+                            onChange={(e) => setFormData({ ...formData, oldPassword: e.target.value })}
+                            className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900"
                             placeholder="••••••••"
                             required
                           />
@@ -235,14 +235,14 @@ export default function ProfilePage() {
                       </div>
 
                       <div className="w-full h-px bg-slate-100 my-2"></div>
-                      
+
                       <div>
                         <label className="block text-sm font-bold text-slate-600 mb-2">Password Baru</label>
-                        <input 
-                          type="password" 
+                        <input
+                          type="password"
                           value={formData.newPassword}
-                          onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
-                          className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900" 
+                          onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
+                          className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900"
                           placeholder="Minimal 8 karakter"
                           required
                         />
@@ -250,20 +250,20 @@ export default function ProfilePage() {
 
                       <div>
                         <label className="block text-sm font-bold text-slate-600 mb-2">Konfirmasi Password Baru</label>
-                        <input 
-                          type="password" 
+                        <input
+                          type="password"
                           value={formData.confirmPassword}
-                          onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-                          className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900" 
+                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                          className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition font-bold text-slate-900"
                           placeholder="Ulangi password baru"
                           required
                         />
                       </div>
                     </div>
-                    
+
                     <div className="pt-6 mt-8 border-t border-slate-100 flex justify-end">
-                      <button 
-                        type="submit" 
+                      <button
+                        type="submit"
                         disabled={isSaving || (formData.newPassword !== formData.confirmPassword)}
                         className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3.5 rounded-xl font-black uppercase tracking-wider text-xs shadow-xl shadow-slate-900/20 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >

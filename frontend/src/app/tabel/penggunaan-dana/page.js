@@ -397,7 +397,17 @@ export default function PenggunaanDanaPage() {
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Jumlah Dana (Rp)</label>
-                    <input type="number" value={formData.jumlah_dana} onChange={(e) => setFormData({...formData, jumlah_dana: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" placeholder="Masukkan angka saja" required />
+                    <input 
+                      type="text" 
+                      value={formData.jumlah_dana ? new Intl.NumberFormat('id-ID').format(formData.jumlah_dana) : ''} 
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData({ ...formData, jumlah_dana: rawValue });
+                      }} 
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                      placeholder="Contoh: 1.000.000" 
+                      required 
+                    />
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Link Bukti (G-Drive / PDF)</label>
