@@ -85,7 +85,11 @@ export default function ProdiPage() {
         body: JSON.stringify(formData),
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
@@ -112,7 +116,11 @@ export default function ProdiPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
       showError('Terjadi kesalahan');

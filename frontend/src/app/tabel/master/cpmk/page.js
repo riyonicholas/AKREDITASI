@@ -135,7 +135,11 @@ export default function CPMKPage() {
         body: JSON.stringify({ ...formData, id_prodi: filterProdi }),
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       if (filterProdi) fetchData();
       resetForm();
     } catch (err) {
@@ -162,7 +166,11 @@ export default function CPMKPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
       showError('Terjadi kesalahan');

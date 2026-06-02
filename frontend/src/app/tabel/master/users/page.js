@@ -88,7 +88,11 @@ export default function UsersPage() {
         body: JSON.stringify(formData),
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
@@ -117,7 +121,11 @@ export default function UsersPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
       showError('Terjadi kesalahan');
@@ -184,7 +192,11 @@ export default function UsersPage() {
         body: JSON.stringify({ ...formData, password: 'stikom2026' }),
       });
       const result = await res.json();
-      showSuccess(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       setShowResetModal(false);
     } catch (err) {
       showError('Gagal mereset password');
