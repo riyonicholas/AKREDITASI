@@ -118,10 +118,10 @@ const GROUPED_MENUS_TABEL = [
     {
         group: "KEMAHASISWAAN",
         items: [
-            { key: "alumni", label: "2.B.4 Masa Tunggu", icon: "⏱️" },
-            { key: "alumni", label: "2.B.5 Kesesuaian Kerja", icon: "👔" },
+            { key: "masa-tunggu", path: "alumni", label: "2.B.4 Masa Tunggu", icon: "⏱️" },
+            { key: "kesesuaian-kerja", path: "alumni", label: "2.B.5 Kesesuaian Kerja", icon: "👔" },
             { key: "accuracy", label: "2.B.6 Kepuasan Pengguna", icon: "😊" },
-            { key: "recognisi", label: "2.D Rekognisi Lulusan", icon: "🏆" },
+            { key: "rekognisi", label: "2.D Rekognisi Lulusan", icon: "🏆" },
         ]
     },
     {
@@ -456,11 +456,11 @@ function NavbarContent() {
                                                                 <div className="absolute left-[15px] top-[20px] bottom-[20px] w-[2px] bg-slate-800"></div>
 
                                                                 {group.items.map(menu => {
-                                                                    const isTabActive = activeTabKey === menu.key;
+                                                                    const isTabActive = activeTabKey === (menu.path || menu.key);
                                                                     return (
                                                                         <button
                                                                             key={menu.key}
-                                                                            onClick={() => router.push(`/tabel/${menu.key}`)}
+                                                                            onClick={() => router.push(`/tabel/${menu.path || menu.key}`)}
                                                                             className={`relative w-full flex items-center justify-between rounded-xl px-2 py-2.5 text-[0.8rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200 group
                                                                     ${isTabActive
                                                                                     ? "bg-blue-500/10 text-blue-400"

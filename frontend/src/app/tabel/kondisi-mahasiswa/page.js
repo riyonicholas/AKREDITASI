@@ -96,6 +96,7 @@ export default function KondisiMahasiswaPage() {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch('http://localhost:5000/api/master/tahun-akademik', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return; // endpoint belum siap, skip tanpa crash
       const result = await res.json();
       if (result.success) setTahunList(result.data.sort((a, b) => parseInt(a.tahun) - parseInt(b.tahun)) || []);
     } catch (err) { console.error('Error fetching tahun:', err); }
@@ -106,8 +107,12 @@ export default function KondisiMahasiswaPage() {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/ala/2a3-kondisi-mahasiswa/${filterProdi}/${filterTahun}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        // Endpoint belum siap atau tidak ditemukan — tampilkan data kosong
+        setData({ ts: {}, ts1: {}, ts2: {} });
+        return;
+      }
       const result = await res.json();
-      
       if (result.success) {
         setData(result.data || { ts: {}, ts1: {}, ts2: {} });
         setFormData({
