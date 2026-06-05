@@ -216,12 +216,15 @@ function NavbarContent() {
 
     // ── Remember last visited tabel ──────────────────────────────────────────
     const DEFAULT_TABEL = '/tabel/master/pegawai';
-    const [tabelHref, setTabelHref] = useState(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('lastVisitedTabel') || DEFAULT_TABEL;
-        }
-        return DEFAULT_TABEL;
-    });
+    // PENTING: Selalu inisialisasi dengan DEFAULT_TABEL (bukan localStorage)
+    // agar nilai SSR dan CSR sama → mencegah Hydration mismatch
+    const [tabelHref, setTabelHref] = useState(DEFAULT_TABEL);
+
+    // Baca localStorage hanya setelah mount (client-side only)
+    useEffect(() => {
+        const saved = localStorage.getItem('lastVisitedTabel');
+        if (saved) setTabelHref(saved);
+    }, []);
 
     // Setiap kali user berpindah ke halaman /tabel/..., simpan ke localStorage
     useEffect(() => {
@@ -261,22 +264,23 @@ function NavbarContent() {
 
     const filteredFlatMenusTabel = filteredGroupedMenusTabel.flatMap(g => g.items);
 
-    // Fetch counts untuk tabel jika di halaman tabel (memakai react-query yang mencache respon agar efisien)
-    // Menggunakan useQueries (bukan useQuery di dalam loop) untuk mematuhi Rules of Hooks
-    const queryResults = useQueries({
-        queries: filteredFlatMenusTabel.map(m => ({
-            queryKey: [m.key],
-            queryFn: () => createService(m.key).getAll(),
-            select: (res) => res.data?.length ?? (res.data ? 1 : 0),
-            enabled: isTabel, // Hanya fetch jika kita sedang di page tabel
+    // useQueries: queryKey pakai "NAVBAR:GROUP:key:idx" agar benar-benar unik
+    // (idx mencegah duplikat jika key sama di beda grup, misal 'data-mahasiswa' di PMB & ALA)
+    // enabled: false → tidak ada fetch ke backend
+    const navbarQueryList = filteredGroupedMenusTabel.flatMap(g =>
+        g.items.map((m, itemIdx) => ({
+            queryKey: [`NAVBAR:${g.group}:${m.key}:${itemIdx}`],
+            queryFn: () => Promise.resolve(0),
+            enabled: false,
         }))
-    });
+    );
+    const queryResults = useQueries({ queries: navbarQueryList });
 
     const counts = {};
-    filteredFlatMenusTabel.forEach((m, idx) => {
-        counts[m.key] = queryResults[idx].data ?? 0;
+    filteredGroupedMenusTabel.flatMap(g => g.items).forEach((m, idx) => {
+        counts[m.key] = 0; // badge count dinonaktifkan
     });
-    const totalSemuaData = Object.values(counts).reduce((a, n) => a + n, 0);
+    const totalSemuaData = 0; // badge count dinonaktifkan (endpoint belum tersedia)
 
     // PENTING: Early return untuk halaman login HARUS diletakkan SETELAH semua deklarasi Hook (seperti useQueries di atas)
     // Jika halaman login, sembunyikan sidebar
@@ -344,8 +348,8 @@ function NavbarContent() {
                                         <Link
                                             href={resolvedHref}
                                             className={`w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-300 ${isActive
-                                                    ? "bg-[#facc15] text-[#0f172a] shadow-md shadow-[#facc15]/20 scale-105"
-                                                    : "hover:bg-white/10 text-[#94a3b8] hover:text-white"
+                                                ? "bg-[#facc15] text-[#0f172a] shadow-md shadow-[#facc15]/20 scale-105"
+                                                : "hover:bg-white/10 text-[#94a3b8] hover:text-white"
                                                 }`}
                                         >
                                             {link.icon}
@@ -420,162 +424,162 @@ function NavbarContent() {
                     {!isProfile && (
                         <div className={`bg-[#0f172a] relative z-10 h-full overflow-hidden transition-all duration-500 ease-in-out ${sidebarCollapsed ? "w-0 opacity-0" : "w-[270px] opacity-100"}`}>
                             <div className="w-[270px] flex flex-col h-full pt-9 px-6">
-                            {/* Header dengan Icon */}
-                            <div className="flex items-center gap-3 mb-8 mt-1.5">
-                                <div className="text-[#facc15] bg-[#facc15]/10 p-2.5 rounded-xl border border-[#facc15]/20 shrink-0">
-                                    {activeLink.icon}
+                                {/* Header dengan Icon */}
+                                <div className="flex items-center gap-3 mb-8 mt-1.5">
+                                    <div className="text-[#facc15] bg-[#facc15]/10 p-2.5 rounded-xl border border-[#facc15]/20 shrink-0">
+                                        {activeLink.icon}
+                                    </div>
+                                    <h1 className="text-[1.15rem] font-bold text-white tracking-wide transition-opacity duration-300 m-0 truncate">
+                                        {activeLink.name}
+                                    </h1>
                                 </div>
-                                <h1 className="text-[1.15rem] font-bold text-white tracking-wide transition-opacity duration-300 m-0 truncate">
-                                    {activeLink.name}
-                                </h1>
-                            </div>
 
-                            {/* Submenu Tabel Section - HANYA MUNCUL DI TABEL */}
-                            {isTabel && (
-                                <div className="flex flex-col flex-1 pl-1 overflow-y-auto pr-2 custom-scrollbar pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#38bdf8 transparent' }}>
-                                    <nav className="flex flex-col gap-4">
-                                        {filteredGroupedMenusTabel.map((group, gIdx) => {
-                                            const isOpen = openGroups[group.group] ?? false;
-                                            return (
-                                                <div key={gIdx} className="flex flex-col gap-0.5">
-                                                    <button
-                                                        onClick={() => toggleGroup(group.group)}
-                                                        className="w-full flex items-center justify-between px-3 py-2.5 bg-transparent hover:bg-slate-800/40 rounded-xl transition-all duration-200 border-none cursor-pointer outline-none group"
-                                                    >
-                                                        <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-widest transition-colors">{group.group}</span>
-                                                        <svg className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-300 ${isOpen ? 'rotate-90' : 'rotate-0'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
-                                                    </button>
+                                {/* Submenu Tabel Section - HANYA MUNCUL DI TABEL */}
+                                {isTabel && (
+                                    <div className="flex flex-col flex-1 pl-1 overflow-y-auto pr-2 custom-scrollbar pb-4" style={{ scrollbarWidth: 'thin', scrollbarColor: '#38bdf8 transparent' }}>
+                                        <nav className="flex flex-col gap-4">
+                                            {filteredGroupedMenusTabel.map((group, gIdx) => {
+                                                const isOpen = openGroups[group.group] ?? false;
+                                                return (
+                                                    <div key={gIdx} className="flex flex-col gap-0.5">
+                                                        <button
+                                                            onClick={() => toggleGroup(group.group)}
+                                                            className="w-full flex items-center justify-between px-3 py-2.5 bg-transparent hover:bg-slate-800/40 rounded-xl transition-all duration-200 border-none cursor-pointer outline-none group"
+                                                        >
+                                                            <span className="text-[0.65rem] font-bold text-slate-400 group-hover:text-slate-200 uppercase tracking-widest transition-colors">{group.group}</span>
+                                                            <svg className={`w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 transition-transform duration-300 ${isOpen ? 'rotate-90' : 'rotate-0'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                                        </button>
 
-                                                    {isOpen && (
-                                                        <div className="flex flex-col gap-1 mt-1 ml-2 relative">
-                                                            {/* Garis vertikal penghubung (tepat di tengah dot: px-2(8px) + setengah w-4(8px) = 16px pusatnya. w-2px letakkan di 15px) */}
-                                                            <div className="absolute left-[15px] top-[20px] bottom-[20px] w-[2px] bg-slate-800"></div>
-                                                            
-                                                            {group.items.map(menu => {
-                                                                const isTabActive = activeTabKey === menu.key;
-                                                                return (
-                                                                    <button
-                                                                        key={menu.key}
-                                                                        onClick={() => router.push(`/tabel/${menu.key}`)}
-                                                                        className={`relative w-full flex items-center justify-between rounded-xl px-2 py-2.5 text-[0.8rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200 group
+                                                        {isOpen && (
+                                                            <div className="flex flex-col gap-1 mt-1 ml-2 relative">
+                                                                {/* Garis vertikal penghubung (tepat di tengah dot: px-2(8px) + setengah w-4(8px) = 16px pusatnya. w-2px letakkan di 15px) */}
+                                                                <div className="absolute left-[15px] top-[20px] bottom-[20px] w-[2px] bg-slate-800"></div>
+
+                                                                {group.items.map(menu => {
+                                                                    const isTabActive = activeTabKey === menu.key;
+                                                                    return (
+                                                                        <button
+                                                                            key={menu.key}
+                                                                            onClick={() => router.push(`/tabel/${menu.key}`)}
+                                                                            className={`relative w-full flex items-center justify-between rounded-xl px-2 py-2.5 text-[0.8rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200 group
                                                                     ${isTabActive
-                                                                                ? "bg-blue-500/10 text-blue-400"
-                                                                                : "bg-transparent text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
-                                                                            }`}
-                                                                    >
-                                                                        <div className="flex items-center w-full">
-                                                                            {/* Dot Indikator */}
-                                                                            <div className="w-4 flex justify-center shrink-0">
-                                                                                <div className={`w-1.5 h-1.5 rounded-full z-10 transition-all duration-300 ${isTabActive ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)] scale-125' : 'bg-slate-600 group-hover:bg-slate-400'}`}></div>
-                                                                            </div>
-                                                                            
-                                                                            <div className="pl-3 truncate">
-                                                                                <span className={`leading-tight truncate ${isTabActive ? "font-bold text-blue-400" : ""}`}>{menu.label}</span>
-                                                                            </div>
-                                                                        </div>
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </nav>
+                                                                                    ? "bg-blue-500/10 text-blue-400"
+                                                                                    : "bg-transparent text-slate-400 hover:bg-slate-800/40 hover:text-slate-200"
+                                                                                }`}
+                                                                        >
+                                                                            <div className="flex items-center w-full">
+                                                                                {/* Dot Indikator */}
+                                                                                <div className="w-4 flex justify-center shrink-0">
+                                                                                    <div className={`w-1.5 h-1.5 rounded-full z-10 transition-all duration-300 ${isTabActive ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.8)] scale-125' : 'bg-slate-600 group-hover:bg-slate-400'}`}></div>
+                                                                                </div>
 
-                                    <div className="mt-8 shrink-0">
-                                        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 text-center">
-                                            <p className="m-0 text-[0.65rem] font-bold uppercase tracking-widest text-slate-500">Total Semua Data</p>
-                                            <p className="m-0 mt-1 text-2xl font-black text-[#38bdf8]">
-                                                {totalSemuaData}
-                                            </p>
+                                                                                <div className="pl-3 truncate">
+                                                                                    <span className={`leading-tight truncate ${isTabActive ? "font-bold text-blue-400" : ""}`}>{menu.label}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </nav>
+
+                                        <div className="mt-8 shrink-0">
+                                            <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-4 text-center">
+                                                <p className="m-0 text-[0.65rem] font-bold uppercase tracking-widest text-slate-500">Total Semua Data</p>
+                                                <p className="m-0 mt-1 text-2xl font-black text-[#38bdf8]">
+                                                    {totalSemuaData}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Submenu Berita Section - HANYA MUNCUL DI BERITA */}
-                            {isBerita && (
-                                <div className="flex flex-col flex-1 pl-1">
-                                    <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest mb-4">Kategori Berita</p>
-                                    <nav className="flex flex-col gap-2">
-                                        {MENUS_BERITA.map(menu => {
-                                            const isCatActive = activeKategoriBerita === menu.key;
-                                            return (
-                                                <button
-                                                    key={menu.key}
-                                                    onClick={() => router.replace(`/berita?kategori=${menu.key}`)}
-                                                    className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-[0.85rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200 group
+                                {/* Submenu Berita Section - HANYA MUNCUL DI BERITA */}
+                                {isBerita && (
+                                    <div className="flex flex-col flex-1 pl-1">
+                                        <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest mb-4">Kategori Berita</p>
+                                        <nav className="flex flex-col gap-2">
+                                            {MENUS_BERITA.map(menu => {
+                                                const isCatActive = activeKategoriBerita === menu.key;
+                                                return (
+                                                    <button
+                                                        key={menu.key}
+                                                        onClick={() => router.replace(`/berita?kategori=${menu.key}`)}
+                                                        className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-[0.85rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200 group
                                                 ${isCatActive
-                                                            ? "bg-[#1e3a8a] shadow-[inset_0_0_0_1px_rgba(56,189,248,0.3)]"
-                                                            : "bg-transparent hover:bg-white/[0.04]"
-                                                        }`}
-                                                >
-                                                    <span className={`leading-tight ${isCatActive ? "text-white font-bold" : "text-[#cbd5e1]"}`}>{menu.label}</span>
-                                                    {isCatActive && (
-                                                        <span className="h-2 w-2 rounded-full bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </nav>
-                                </div>
-                            )}
+                                                                ? "bg-[#1e3a8a] shadow-[inset_0_0_0_1px_rgba(56,189,248,0.3)]"
+                                                                : "bg-transparent hover:bg-white/[0.04]"
+                                                            }`}
+                                                    >
+                                                        <span className={`leading-tight ${isCatActive ? "text-white font-bold" : "text-[#cbd5e1]"}`}>{menu.label}</span>
+                                                        {isCatActive && (
+                                                            <span className="h-2 w-2 rounded-full bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </nav>
+                                    </div>
+                                )}
 
-                            {/* Submenu Panduan Section - HANYA MUNCUL DI PANDUAN */}
-                            {isPanduan && (
-                                <div className="flex flex-col flex-1 pl-1">
-                                    <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest mb-4">Kategori Panduan</p>
-                                    <nav className="flex flex-col gap-2">
-                                        {MENUS_PANDUAN.map(menu => {
-                                            const isActive = (searchParams?.get('kategori') || 'Semua') === menu.key;
-                                            return (
-                                                <button
-                                                    key={menu.key}
-                                                    onClick={() => router.replace(`/panduan?kategori=${menu.key}`)}
-                                                    className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-[0.85rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200
+                                {/* Submenu Panduan Section - HANYA MUNCUL DI PANDUAN */}
+                                {isPanduan && (
+                                    <div className="flex flex-col flex-1 pl-1">
+                                        <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest mb-4">Kategori Panduan</p>
+                                        <nav className="flex flex-col gap-2">
+                                            {MENUS_PANDUAN.map(menu => {
+                                                const isActive = (searchParams?.get('kategori') || 'Semua') === menu.key;
+                                                return (
+                                                    <button
+                                                        key={menu.key}
+                                                        onClick={() => router.replace(`/panduan?kategori=${menu.key}`)}
+                                                        className={`w-full flex items-center justify-between rounded-xl px-4 py-3 text-[0.85rem] font-medium cursor-pointer border-none outline-none text-left transition-all duration-200
                                                 ${isActive
-                                                            ? "bg-[#1e3a8a] shadow-[inset_0_0_0_1px_rgba(56,189,248,0.3)]"
-                                                            : "bg-transparent hover:bg-white/[0.04]"
-                                                        }`}
-                                                >
-                                                    <span className={`leading-tight ${isActive ? "text-white font-bold" : "text-[#cbd5e1]"}`}>{menu.label}</span>
-                                                    {isActive && (
-                                                        <span className="h-2 w-2 rounded-full bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                    </nav>
-                                </div>
-                            )}
-
-                            {/* Aktivitas Terkini Section - HANYA MUNCUL DI DASHBOARD */}
-                            {isDashboard && (
-                                <div className="flex flex-col flex-1 truncate">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest m-0">Aktivitas Terkini</p>
-                                        <div className="w-1.5 h-1.5 rounded-full bg-[#facc15] animate-pulse"></div>
+                                                                ? "bg-[#1e3a8a] shadow-[inset_0_0_0_1px_rgba(56,189,248,0.3)]"
+                                                                : "bg-transparent hover:bg-white/[0.04]"
+                                                            }`}
+                                                    >
+                                                        <span className={`leading-tight ${isActive ? "text-white font-bold" : "text-[#cbd5e1]"}`}>{menu.label}</span>
+                                                        {isActive && (
+                                                            <span className="h-2 w-2 rounded-full bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.6)]" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </nav>
                                     </div>
+                                )}
 
-                                    <div className="flex flex-col gap-4">
-                                        {RECENT_ACTIVITIES.map((activity, idx) => (
-                                            <div key={idx} className="flex gap-3 relative before:absolute before:left-[3px] before:top-6 before:w-px before:h-[calc(100%+4px)] before:bg-white/10 last:before:hidden">
-                                                <div className="w-2 h-2 rounded-full bg-[#38bdf8] shrink-0 mt-1.5 relative z-10 shadow-[0_0_8px_rgba(56,189,248,0.5)]"></div>
-                                                <div className="flex flex-col gap-0.5 truncate">
-                                                    <p className="text-[0.75rem] font-medium text-white m-0 leading-snug truncate">{activity.title}</p>
-                                                    <span className="text-[0.6rem] font-medium text-[#64748b] truncate">{activity.time}</span>
+                                {/* Aktivitas Terkini Section - HANYA MUNCUL DI DASHBOARD */}
+                                {isDashboard && (
+                                    <div className="flex flex-col flex-1 truncate">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest m-0">Aktivitas Terkini</p>
+                                            <div className="w-1.5 h-1.5 rounded-full bg-[#facc15] animate-pulse"></div>
+                                        </div>
+
+                                        <div className="flex flex-col gap-4">
+                                            {RECENT_ACTIVITIES.map((activity, idx) => (
+                                                <div key={idx} className="flex gap-3 relative before:absolute before:left-[3px] before:top-6 before:w-px before:h-[calc(100%+4px)] before:bg-white/10 last:before:hidden">
+                                                    <div className="w-2 h-2 rounded-full bg-[#38bdf8] shrink-0 mt-1.5 relative z-10 shadow-[0_0_8px_rgba(56,189,248,0.5)]"></div>
+                                                    <div className="flex flex-col gap-0.5 truncate">
+                                                        <p className="text-[0.75rem] font-medium text-white m-0 leading-snug truncate">{activity.title}</p>
+                                                        <span className="text-[0.6rem] font-medium text-[#64748b] truncate">{activity.time}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
+                                            ))}
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Footer Copy / V1.0 Area */}
-                            <div className={`mt-auto mb-6 pt-6 border-t border-white/10 ${!isDashboard && !isTabel && !isBerita && !isPanduan && 'mt-[calc(100vh-200px)]'}`}>
-                                <p className="text-[0.65rem] font-medium text-[#64748b] leading-relaxed text-center tracking-wide italic m-0">Platform Akademik V1.0</p>
-                            </div>
+                                {/* Footer Copy / V1.0 Area */}
+                                <div className={`mt-auto mb-6 pt-6 border-t border-white/10 ${!isDashboard && !isTabel && !isBerita && !isPanduan && 'mt-[calc(100vh-200px)]'}`}>
+                                    <p className="text-[0.65rem] font-medium text-[#64748b] leading-relaxed text-center tracking-wide italic m-0">Platform Akademik V1.0</p>
+                                </div>
                             </div>
                         </div>
                     )}

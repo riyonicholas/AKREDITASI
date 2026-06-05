@@ -1,5 +1,7 @@
 import Link from "next/link";
 import * as Separator from "@radix-ui/react-separator";
+import LogoStikom from "@/app/image/image.png";
+
 
 const footerLinks = [
     { href: "/tabel", label: "Dashboard" },
@@ -21,7 +23,8 @@ export default function Footer() {
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 bg-white rounded-md p-1 shadow-sm">
-                            <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+                            <img src={LogoStikom.src} alt="Logo SI-AKREDITASI" className="w-full h-full object-contain" />
+
                         </div>
                         <span className="text-[1.1rem] font-semibold text-slate-200 tracking-wider">
                             SI-<strong className="font-extrabold text-blue-400">AKREDITASI</strong>

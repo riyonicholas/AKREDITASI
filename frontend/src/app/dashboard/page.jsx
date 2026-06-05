@@ -278,6 +278,25 @@ export default function DashboardPage() {
 
   const filteredUniqueChartKeys = Array.from(new Set(filteredChartGroups.flatMap(g => g.items.map(i => i.endpoint))));
 
+  // ─── Whitelist endpoint yang sudah siap di backend ───────────────────────
+  // Endpoint di LUAR daftar ini tidak akan di-fetch sama sekali (enabled:false)
+  // → tidak ada request = tidak ada error merah di console
+  // Tambahkan endpoint di sini setelah backend siap.
+  const READY_ENDPOINTS = new Set([
+    "master/pegawai",
+    "master/dosen",
+    "master/tendik",
+    "master/prodi",
+    "master/users",
+    "upps/1a1-pimpinan",
+    "kepegawaian/1a5-tendik",
+    "prodi/2b1-isi-pembelajaran",
+    "prodi/2b2-pemetaan-cpl",
+    "prodi/2b3-peta-pemenuhan",
+    "prodi/2c-fleksibilitas",
+    "sisfo/5-1-sistem-tata-kelola",
+  ]);
+
   const visibleMenus = showAll ? filteredTabelMenuGroups : filteredTabelMenuGroups.slice(0, 3);
 
   // State Kalender
@@ -308,13 +327,23 @@ export default function DashboardPage() {
   };
 
   // Fetch jumlah data tiap endpoint untuk donut chart
+  // retry: 0 → tidak retry jika 404/500 (endpoint belum tersedia di backend)
+  // queryFn silent-fail → return 0 jika error, tidak spam console
   const chartResults = useQueries({
     queries: filteredUniqueChartKeys.map(key => ({
-      queryKey: ["chart", key],
-      queryFn: () => createService(key).getAll(),
-      select: (res) => Array.isArray(res) ? res.length : (res?.data?.length ?? 0),
-      retry: false,
+      queryKey: ["dashboard-chart", key],
+      queryFn: async () => {
+        try {
+          const res = await createService(key).getAll();
+          return Array.isArray(res) ? res.length : (res?.data?.length ?? 0);
+        } catch {
+          return 0;
+        }
+      },
+      enabled: READY_ENDPOINTS.has(key), // ← tidak fetch jika belum siap
+      retry: 0,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 menit — tidak re-fetch berulang
     }))
   });
 
