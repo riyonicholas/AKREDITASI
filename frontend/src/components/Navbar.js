@@ -252,6 +252,7 @@ function NavbarContent() {
     const filteredGroupedMenusTabel = GROUPED_MENUS_TABEL.filter(group => {
         const groupName = group.group.trim().toUpperCase();
         if (userUnit === 'ADMIN' || userUnit === 'ADMINISTRATOR') return true;
+        if (groupName === 'KEUANGAN' && userUnit === 'WAKET 2') return true;
         return groupName === userUnit;
     });
 
