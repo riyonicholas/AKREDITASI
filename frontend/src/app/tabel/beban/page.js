@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, History, RotateCcw, Monitor, TrendingUp, Users, ExternalLink } from 'lucide-react';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function BebanPage() {
   const router = useRouter();
@@ -18,10 +19,10 @@ export default function BebanPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [isTrashMode, setIsTrashMode] = useState(false);
-  
+
   const [filterIdTahun, setFilterIdTahun] = useState('');
   const [filterIdProdi, setFilterIdProdi] = useState('');
-  
+
   const [tahunList, setTahunList] = useState([]);
   const [prodiList, setProdiList] = useState([]);
   const [dosenList, setDosenList] = useState([]);
@@ -64,7 +65,7 @@ export default function BebanPage() {
       if (tahunData.success) {
         const sortedTahun = tahunData.data.sort((a, b) => parseInt(a.tahun) - parseInt(b.tahun));
         setTahunList(sortedTahun);
-        
+
         const savedTahun = localStorage.getItem('beban_filterTahun');
         if (savedTahun && sortedTahun.some(t => t.id_tahun.toString() === savedTahun)) {
           setFilterIdTahun(savedTahun);
@@ -78,7 +79,7 @@ export default function BebanPage() {
       }
       if (prodiData.success) {
         setProdiList(prodiData.data);
-        
+
         const savedProdi = localStorage.getItem('beban_filterProdi');
         if (savedProdi && prodiData.data.some(p => p.id_prodi.toString() === savedProdi)) {
           setFilterIdProdi(savedProdi);
@@ -108,15 +109,15 @@ export default function BebanPage() {
       const baseParams = `id_tahun=${filterIdTahun}${filterIdProdi ? `&id_prodi=${filterIdProdi}` : ''}`;
       const activeUrl = `http://localhost:5000/api/upps/1a4-beban?${baseParams}`;
       const trashUrl = `http://localhost:5000/api/upps/1a4-beban/trash?${baseParams}`;
-      
+
       const [activeRes, trashRes] = await Promise.all([
         fetch(activeUrl, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(trashUrl, { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
-      
+
       const activeResult = await activeRes.json();
       const trashResult = await trashRes.json();
-      
+
       if (activeResult.success) {
         setActiveData(activeResult.data || []);
         setSummary(activeResult.summary || null);
@@ -133,14 +134,14 @@ export default function BebanPage() {
     e.preventDefault();
     const token = localStorage.getItem('token');
     const method = editingId ? 'PUT' : 'POST';
-    const url = editingId 
+    const url = editingId
       ? `http://localhost:5000/api/upps/1a4-beban/${editingId}`
       : 'http://localhost:5000/api/upps/1a4-beban';
 
     try {
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -150,11 +151,15 @@ export default function BebanPage() {
         }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menyimpan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan saat menyimpan data');
     }
   };
 
@@ -175,7 +180,8 @@ export default function BebanPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin hapus data ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus data ini? Data akan dipindahkan ke Sampah.');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/upps/1a4-beban/${id}`, {
@@ -183,10 +189,14 @@ export default function BebanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
@@ -198,15 +208,20 @@ export default function BebanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal memulihkan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('Hapus permanen?')) return;
+    const isConfirmed = await showConfirm('Hapus permanen? Data tidak dapat dikembalikan.');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/upps/1a4-beban/hard/${id}`, {
@@ -214,10 +229,14 @@ export default function BebanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus permanen');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -336,33 +355,33 @@ export default function BebanPage() {
         {/* Form Section */}
         {showForm && (
           <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Beban Kerja' : 'Input Beban Kerja Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
+            <Card title={editingId ? 'Edit Beban Kerja' : 'Input Beban Kerja Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0">
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="md:col-span-2 lg:col-span-2">
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Pilih DTPR (Dosen)</label>
-                    <select value={formData.id_dosen} onChange={(e) => setFormData({...formData, id_dosen: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
+                    <select value={formData.id_dosen} onChange={(e) => setFormData({ ...formData, id_dosen: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
                       <option value="">Pilih Dosen</option>
                       {dosenList.map(d => <option key={d.id_dosen} value={d.id_dosen}>{d.nama_lengkap}</option>)}
                     </select>
                   </div>
                   <div>
-                    <Input type="number" step="0.01" label="SKS PS Sendiri" value={formData.sks_ps_sendiri} onChange={(e) => setFormData({...formData, sks_ps_sendiri: e.target.value})} placeholder="0.00" />
+                    <Input type="number" step="0.01" label="SKS PS Sendiri" value={formData.sks_ps_sendiri} onChange={(e) => setFormData({ ...formData, sks_ps_sendiri: e.target.value })} placeholder="0.00" />
                   </div>
                   <div>
-                    <Input type="number" step="0.01" label="SKS PS Lain" value={formData.sks_ps_lain} onChange={(e) => setFormData({...formData, sks_ps_lain: e.target.value})} placeholder="0.00" />
+                    <Input type="number" step="0.01" label="SKS PS Lain" value={formData.sks_ps_lain} onChange={(e) => setFormData({ ...formData, sks_ps_lain: e.target.value })} placeholder="0.00" />
                   </div>
                   <div>
-                    <Input type="number" step="0.01" label="SKS PT Lain" value={formData.sks_pt_lain} onChange={(e) => setFormData({...formData, sks_pt_lain: e.target.value})} placeholder="0.00" />
+                    <Input type="number" step="0.01" label="SKS PT Lain" value={formData.sks_pt_lain} onChange={(e) => setFormData({ ...formData, sks_pt_lain: e.target.value })} placeholder="0.00" />
                   </div>
                   <div>
-                    <Input type="number" step="0.01" label="SKS Penelitian" value={formData.sks_penelitian} onChange={(e) => setFormData({...formData, sks_penelitian: e.target.value})} placeholder="0.00" />
+                    <Input type="number" step="0.01" label="SKS Penelitian" value={formData.sks_penelitian} onChange={(e) => setFormData({ ...formData, sks_penelitian: e.target.value })} placeholder="0.00" />
                   </div>
                   <div>
-                    <Input type="number" step="0.01" label="SKS PkM" value={formData.sks_pkm} onChange={(e) => setFormData({...formData, sks_pkm: e.target.value})} placeholder="0.00" />
+                    <Input type="number" step="0.01" label="SKS PkM" value={formData.sks_pkm} onChange={(e) => setFormData({ ...formData, sks_pkm: e.target.value })} placeholder="0.00" />
                   </div>
                   <div>
-                    <Input type="number" step="0.01" label="SKS Manajemen PT Lain" value={formData.sks_manajemen_pt_lain} onChange={(e) => setFormData({...formData, sks_manajemen_pt_lain: e.target.value})} placeholder="0.00" />
+                    <Input type="number" step="0.01" label="SKS Manajemen PT Lain" value={formData.sks_manajemen_pt_lain} onChange={(e) => setFormData({ ...formData, sks_manajemen_pt_lain: e.target.value })} placeholder="0.00" />
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
@@ -391,20 +410,20 @@ export default function BebanPage() {
                 <thead className="bg-[#1E3A8A]">
                   <tr>
                     <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 text-center align-middle">No</th>
-                     <th rowSpan="2" className="px-6 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 align-middle">Nama DTPR</th>
-                     <th colSpan="3" className="px-4 py-3 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 border-b border-white/20 text-center">SKS Pengajaran</th>
-                     <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 text-center align-middle">Riset</th>
-                     <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 text-center align-middle">PkM</th>
-                     <th colSpan="2" className="px-4 py-3 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 border-b border-white/20 text-center">SKS Manajemen</th>
-                     <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-yellow-300 uppercase tracking-wider border-r border-white/20 text-center align-middle">Total</th>
-                     <th rowSpan="2" className="px-6 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider text-center align-middle">Aksi</th>
-                   </tr>
-                   <tr className="bg-[#162d6e]">
-                     <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PS Sendiri</th>
-                     <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PS Lain</th>
-                     <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PT Lain</th>
-                     <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PT Sendiri</th>
-                     <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PT Lain</th>
+                    <th rowSpan="2" className="px-6 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 align-middle">Nama DTPR</th>
+                    <th colSpan="3" className="px-4 py-3 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 border-b border-white/20 text-center">SKS Pengajaran</th>
+                    <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 text-center align-middle">Riset</th>
+                    <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 text-center align-middle">PkM</th>
+                    <th colSpan="2" className="px-4 py-3 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 border-b border-white/20 text-center">SKS Manajemen</th>
+                    <th rowSpan="2" className="px-4 py-4 text-xs font-bold text-yellow-300 uppercase tracking-wider border-r border-white/20 text-center align-middle">Total</th>
+                    <th rowSpan="2" className="px-6 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider text-center align-middle">Aksi</th>
+                  </tr>
+                  <tr className="bg-[#162d6e]">
+                    <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PS Sendiri</th>
+                    <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PS Lain</th>
+                    <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PT Lain</th>
+                    <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PT Sendiri</th>
+                    <th className="px-3 py-2 text-[0.65rem] font-bold text-slate-300 uppercase tracking-wider border-r border-white/20 text-center">PT Lain</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

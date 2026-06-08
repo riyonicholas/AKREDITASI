@@ -45,7 +45,7 @@ const NAV_LINKS = [
 ];
 
 // Tabel submenu definition
-const GROUPED_MENUS_TABEL = [
+export const GROUPED_MENUS_TABEL = [
     {
         group: "MASTER DATA",
         items: [
@@ -127,6 +127,7 @@ const GROUPED_MENUS_TABEL = [
     {
         group: "LPPM",
         items: [
+            { key: "master/roadmap-lppm", label: "Roadmap LPPM", icon: "🗺️" },
             { key: "penelitian-dtpr", label: "3.A.2 Penelitian DTPR", icon: "🧪" },
             { key: "pkm-dtpr", label: "4.A.2 PkM DTPR", icon: "🌱" },
         ]
@@ -151,15 +152,7 @@ const MENUS_BERITA = [
     { key: "Informasi Mitra", label: "Informasi Mitra" }
 ];
 
-// Panduan submenu definition
-const MENUS_PANDUAN = [
-    { key: "Semua", label: "Semua Panduan" },
-    { key: "Akun", label: "Akun" },
-    { key: "Sistem", label: "Sistem" },
-    { key: "Akademik", label: "Akademik" },
-    { key: "Tugas", label: "Tugas" },
-    { key: "Bantuan", label: "Bantuan" },
-];
+// Kategori panduan akan di-generate dinamis di dalam NavbarContent
 
 // Data mock untuk aktivitas terkini
 const RECENT_ACTIVITIES = [
@@ -263,6 +256,19 @@ function NavbarContent() {
     });
 
     const filteredFlatMenusTabel = filteredGroupedMenusTabel.flatMap(g => g.items);
+
+    // Generate Kategori Panduan secara dinamis berdasarkan Role
+    const isPanduanAdmin = userUnit === 'ADMIN' || userUnit === 'ADMINISTRATOR';
+    const dynamicMenusPanduan = isPanduanAdmin 
+        ? [
+            { key: "Website", label: "Panduan Website" },
+            { key: "Semua", label: "Manajemen Panduan" },
+            { key: "Panduan Tabel", label: "Panduan Tabel" }
+        ]
+        : [
+            { key: "Website", label: "Panduan Website" },
+            { key: "Semua", label: `Panduan ${user?.unit || 'Sistem'}` }
+        ];
 
     // useQueries: queryKey pakai "NAVBAR:GROUP:key:idx" agar benar-benar unik
     // (idx mencegah duplikat jika key sama di beda grup, misal 'data-mahasiswa' di PMB & ALA)
@@ -531,7 +537,7 @@ function NavbarContent() {
                                     <div className="flex flex-col flex-1 pl-1">
                                         <p className="text-[0.65rem] font-black text-[#94a3b8] uppercase tracking-widest mb-4">Kategori Panduan</p>
                                         <nav className="flex flex-col gap-2">
-                                            {MENUS_PANDUAN.map(menu => {
+                                            {dynamicMenusPanduan.map(menu => {
                                                 const isActive = (searchParams?.get('kategori') || 'Semua') === menu.key;
                                                 return (
                                                     <button

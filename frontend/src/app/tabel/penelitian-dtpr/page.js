@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, BookOpen, Users, Map, Activity, ExternalLink, Database } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 function PenelitianContent() {
   const router = useRouter();
@@ -35,7 +36,7 @@ function PenelitianContent() {
     hki: []
   });
 
-  const showError = (msg) => { setError(msg); setTimeout(() => setError(''), 5000); };
+
 
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
@@ -148,7 +149,10 @@ function PenelitianContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!roadmap) return alert('Roadmap tidak ditemukan!');
+    if (!roadmap) {
+        showError('Roadmap tidak ditemukan!');
+        return;
+    }
     const token = localStorage.getItem('token');
 
     const payload = {
@@ -184,15 +188,15 @@ function PenelitianContent() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         setShowForm(false);
         fetchData();
         resetForm();
       } else {
-        alert(result.message);
+        showError(result.message);
       }
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -224,6 +228,17 @@ function PenelitianContent() {
     return `Rp ${Number(val).toLocaleString('id-ID')}`;
   };
 
+  const formatRupiahInput = (value) => {
+    if (value === null || value === undefined) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const handleDanaChange = (e) => {
+    let val = e.target.value.replace(/[^0-9]/g, '');
+    if (!val) val = '0';
+    setFormData({ ...formData, induk: { ...formData.induk, jumlah_dana: parseInt(val, 10) } });
+  };
+
   const resetForm = () => {
     setEditingId(null);
     setFormData({
@@ -233,17 +248,20 @@ function PenelitianContent() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin ingin memindahkan data ini ke tempat sampah?')) return;
+    const isConfirmed = await showConfirm('Yakin ingin memindahkan data ini ke tempat sampah?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/lppm/3a2-penelitian-dtpr/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
+      } else {
+        showError(result.message || 'Gagal menghapus');
       }
     } catch (err) {
-      alert('Gagal menghapus');
+      showError('Gagal menghapus');
     }
   };
 
@@ -460,7 +478,7 @@ function PenelitianContent() {
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Dana (Rp)</label>
-                          <input type="number" value={formData.induk.jumlah_dana} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_dana: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
+                          <input type="text" value={formatRupiahInput(formData.induk.jumlah_dana)} onChange={handleDanaChange} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                         </div>
                       </div>
                       <div>

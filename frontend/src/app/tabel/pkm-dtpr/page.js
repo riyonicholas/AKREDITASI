@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, BookOpen, Users, Map, Activity, ExternalLink, Database } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 function PkmContent() {
   const router = useRouter();
@@ -35,7 +36,7 @@ function PkmContent() {
     hki: []
   });
 
-  const showError = (msg) => { setError(msg); setTimeout(() => setError(''), 5000); };
+
 
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
@@ -148,7 +149,10 @@ function PkmContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!roadmap) return alert('Roadmap tidak ditemukan!');
+    if (!roadmap) {
+        showError('Roadmap tidak ditemukan!');
+        return;
+    }
     const token = localStorage.getItem('token');
     
     const payload = {
@@ -184,15 +188,15 @@ function PkmContent() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         setShowForm(false);
         fetchData();
         resetForm();
       } else {
-        alert(result.message);
+        showError(result.message);
       }
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -224,6 +228,17 @@ function PkmContent() {
     return `Rp ${Number(val).toLocaleString('id-ID')}`;
   };
 
+  const formatRupiahInput = (value) => {
+    if (value === null || value === undefined) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const handleDanaChange = (e) => {
+    let val = e.target.value.replace(/[^0-9]/g, '');
+    if (!val) val = '0';
+    setFormData({ ...formData, induk: { ...formData.induk, jumlah_dana: parseInt(val, 10) } });
+  };
+
   const resetForm = () => {
     setEditingId(null);
     setFormData({
@@ -233,17 +248,20 @@ function PkmContent() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin ingin memindahkan data ini ke tempat sampah?')) return;
+    const isConfirmed = await showConfirm('Yakin ingin memindahkan data ini ke tempat sampah?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/lppm/4a2-pkm-dtpr/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
+      } else {
+        showError(result.message || 'Gagal menghapus');
       }
     } catch(err) {
-      alert('Gagal menghapus');
+      showError('Gagal menghapus');
     }
   };
 
@@ -426,22 +444,22 @@ function PkmContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-200/60">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Pilih Dosen</label>
-                        <select value={formData.induk.id_dosen} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, id_dosen: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" required>
+                        <select value={formData.induk.id_dosen} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, id_dosen: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" required>
                           <option value="">-- Pilih --</option>
                           {dosenList.map(d => <option key={d.id_dosen} value={d.id_dosen}>{d.nama_lengkap}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Judul PkM</label>
-                        <input type="text" value={formData.induk.judul} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, judul: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" required />
+                        <input type="text" value={formData.induk.judul} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, judul: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" required />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Jenis Hibah</label>
-                        <input type="text" value={formData.induk.jenis_hibah} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jenis_hibah: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                        <input type="text" value={formData.induk.jenis_hibah} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jenis_hibah: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Sumber Pembiayaan</label>
-                        <select value={formData.induk.sumber} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, sumber: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white">
+                        <select value={formData.induk.sumber} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, sumber: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all">
                           <option value="">-- Pilih --</option>
                           <option value="Internasional">Internasional</option>
                           <option value="Nasional">Nasional</option>
@@ -451,20 +469,20 @@ function PkmContent() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Mhs Terlibat</label>
-                          <input type="number" value={formData.induk.jumlah_mahasiswa} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_mahasiswa: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                          <input type="number" value={formData.induk.jumlah_mahasiswa} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_mahasiswa: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Durasi (Thn)</label>
-                          <input type="number" value={formData.induk.durasi} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, durasi: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                          <input type="number" value={formData.induk.durasi} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, durasi: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Dana (Rp)</label>
-                          <input type="number" value={formData.induk.jumlah_dana} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_dana: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                          <input type="text" value={formatRupiahInput(formData.induk.jumlah_dana)} onChange={handleDanaChange} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Link Bukti Induk</label>
-                        <input type="url" value={formData.induk.link_bukti} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, link_bukti: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                        <input type="url" value={formData.induk.link_bukti} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, link_bukti: e.target.value } })} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-800 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 transition-all" />
                       </div>
                     </div>
                   </div>
@@ -480,12 +498,12 @@ function PkmContent() {
                     {formData.kerjasama.map((k, i) => (
                       <div key={i} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-violet-50 p-4 rounded-xl border border-violet-200/60 relative">
                         <button type="button" onClick={() => handleRemoveSubItem('kerjasama', i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
-                        <input type="text" placeholder="Judul Kerjasama" value={k.judul || ''} onChange={e => handleSubItemChange('kerjasama', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <input type="text" placeholder="Mitra" value={k.mitra || ''} onChange={e => handleSubItemChange('kerjasama', i, 'mitra', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <select value={k.sumber || ''} onChange={e => handleSubItemChange('kerjasama', i, 'sumber', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white">
+                        <input type="text" placeholder="Judul Kerjasama" value={k.judul || ''} onChange={e => handleSubItemChange('kerjasama', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border border-violet-200 rounded-lg text-xs text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
+                        <input type="text" placeholder="Mitra" value={k.mitra || ''} onChange={e => handleSubItemChange('kerjasama', i, 'mitra', e.target.value)} className="w-full px-3 py-2 bg-white border border-violet-200 rounded-lg text-xs text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
+                        <select value={k.sumber || ''} onChange={e => handleSubItemChange('kerjasama', i, 'sumber', e.target.value)} className="w-full px-3 py-2 bg-white border border-violet-200 rounded-lg text-xs text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20">
                           <option value="">- Tingkat -</option><option value="Internasional">Internasional</option><option value="Nasional">Nasional</option><option value="Lokal">Lokal</option>
                         </select>
-                        <input type="text" placeholder="Link Bukti" value={k.link || ''} onChange={e => handleSubItemChange('kerjasama', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
+                        <input type="text" placeholder="Link Bukti" value={k.link || ''} onChange={e => handleSubItemChange('kerjasama', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border border-violet-200 rounded-lg text-xs text-slate-800 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20" />
                       </div>
                     ))}
                   </div>
@@ -499,8 +517,8 @@ function PkmContent() {
                     {formData.publikasi.map((p, i) => (
                       <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-orange-50 p-4 rounded-xl border border-orange-200/60 relative">
                         <button type="button" onClick={() => handleRemoveSubItem('publikasi', i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
-                        <input type="text" placeholder="Judul Publikasi" value={p.judul || ''} onChange={e => handleSubItemChange('publikasi', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <select value={p.jenis || ''} onChange={e => handleSubItemChange('publikasi', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white">
+                        <input type="text" placeholder="Judul Publikasi" value={p.judul || ''} onChange={e => handleSubItemChange('publikasi', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border border-orange-200 rounded-lg text-xs text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20" />
+                        <select value={p.jenis || ''} onChange={e => handleSubItemChange('publikasi', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border border-orange-200 rounded-lg text-xs text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20">
                           <option value="">- Jenis Publikasi -</option>
                           <option value="IB">Internasional Bereputasi (IB)</option>
                           <option value="I">Internasional tidak Bereputasi (I)</option>
@@ -510,7 +528,7 @@ function PkmContent() {
                           <option value="S4">Jurnal Sinta 4 (S4)</option>
                           <option value="T">Tidak Terakreditasi (T)</option>
                         </select>
-                        <input type="text" placeholder="Link Bukti" value={p.link || ''} onChange={e => handleSubItemChange('publikasi', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
+                        <input type="text" placeholder="Link Bukti" value={p.link || ''} onChange={e => handleSubItemChange('publikasi', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border border-orange-200 rounded-lg text-xs text-slate-800 outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20" />
                       </div>
                     ))}
                   </div>
@@ -524,11 +542,11 @@ function PkmContent() {
                     {formData.hki.map((h, i) => (
                       <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200/60 relative">
                         <button type="button" onClick={() => handleRemoveSubItem('hki', i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
-                        <input type="text" placeholder="Judul HKI" value={h.judul || ''} onChange={e => handleSubItemChange('hki', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <select value={h.jenis || ''} onChange={e => handleSubItemChange('hki', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white">
+                        <input type="text" placeholder="Judul HKI" value={h.judul || ''} onChange={e => handleSubItemChange('hki', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-lg text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
+                        <select value={h.jenis || ''} onChange={e => handleSubItemChange('hki', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-lg text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
                           <option value="">- Jenis HKI -</option><option value="Paten">Paten</option><option value="Hak Cipta">Hak Cipta</option><option value="Desain Industri">Desain Industri</option>
                         </select>
-                        <input type="text" placeholder="Link Bukti" value={h.link || ''} onChange={e => handleSubItemChange('hki', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
+                        <input type="text" placeholder="Link Bukti" value={h.link || ''} onChange={e => handleSubItemChange('hki', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border border-emerald-200 rounded-lg text-xs text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20" />
                       </div>
                     ))}
                   </div>

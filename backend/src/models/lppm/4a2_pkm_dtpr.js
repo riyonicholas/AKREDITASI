@@ -92,8 +92,8 @@ const ModelPkm = {
             // C. Insert Tabel Publikasi (Jika Ada)
             if (data.publikasi && data.publikasi.length > 0) {
                 const sqlPublikasi = `
-                    INSERT INTO \`4c2_publikasi_pkm\` 
-                    (id_4a2, id_tahun, judul_publikasi, jenis_publikasi, link_bukti, created_by)
+                    INSERT INTO \`4c2_diseminasi_hasil_pkm\` 
+                    (id_4a2, id_tahun, judul_diseminasi, tingkat_diseminasi, link_bukti, created_by)
                     VALUES (?, ?, ?, ?, ?, ?)
                 `;
                 for (let p of data.publikasi) {
@@ -147,7 +147,7 @@ const ModelPkm = {
 
             // B. Hapus Data Relasi Lama
             await connection.execute(`DELETE FROM \`4c1_kerjasama_pkm\` WHERE id_4a2 = ?`, [id]);
-            await connection.execute(`DELETE FROM \`4c2_publikasi_pkm\` WHERE id_4a2 = ?`, [id]);
+            await connection.execute(`DELETE FROM \`4c2_diseminasi_hasil_pkm\` WHERE id_4a2 = ?`, [id]);
             await connection.execute(`DELETE FROM \`4c3_perolehan_hki_pkm\` WHERE id_4a2 = ?`, [id]);
 
             // C. Insert Tabel Kerjasama Baru (Jika Ada)
@@ -168,8 +168,8 @@ const ModelPkm = {
             // D. Insert Tabel Publikasi Baru (Jika Ada)
             if (data.publikasi && data.publikasi.length > 0) {
                 const sqlPublikasi = `
-                    INSERT INTO \`4c2_publikasi_pkm\` 
-                    (id_4a2, id_tahun, judul_publikasi, jenis_publikasi, link_bukti, created_by)
+                    INSERT INTO \`4c2_diseminasi_hasil_pkm\` 
+                    (id_4a2, id_tahun, judul_diseminasi, tingkat_diseminasi, link_bukti, created_by)
                     VALUES (?, ?, ?, ?, ?, ?)
                 `;
                 for (let p of data.publikasi) {

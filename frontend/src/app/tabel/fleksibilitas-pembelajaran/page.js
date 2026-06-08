@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, RotateCcw, Trash, Monitor, Link as LinkIcon, ExternalLink, Activity, Info } from 'lucide-react';
 
 export default function FleksibilitasPembelajaranPage() {
@@ -208,7 +209,7 @@ export default function FleksibilitasPembelajaranPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
         resetForm();
       } else {
@@ -232,7 +233,8 @@ export default function FleksibilitasPembelajaranPage() {
   };
 
   const handleSoftDelete = async (id) => {
-    if (!confirm('Pindahkan data fleksibilitas ini ke tempat sampah?')) return;
+    const isConfirmed = await showConfirm('Pindahkan data fleksibilitas ini ke tempat sampah?', 'Ya, Pindahkan');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/prodi/2c-fleksibilitas/${id}`, {
@@ -241,7 +243,7 @@ export default function FleksibilitasPembelajaranPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
       } else {
         showError(result.message || 'Gagal menghapus data');
@@ -260,7 +262,7 @@ export default function FleksibilitasPembelajaranPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
       } else {
         showError(result.message || 'Gagal memulihkan data');
@@ -271,7 +273,8 @@ export default function FleksibilitasPembelajaranPage() {
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('HAPUS PERMANEN? Tindakan ini tidak dapat dibatalkan.')) return;
+    const isConfirmed = await showConfirm('HAPUS PERMANEN? Tindakan ini tidak dapat dibatalkan.', 'Ya, Hapus Permanen');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/prodi/2c-fleksibilitas/hard/${id}`, {
@@ -280,7 +283,7 @@ export default function FleksibilitasPembelajaranPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
       } else {
         showError(result.message || 'Gagal menghapus permanen');

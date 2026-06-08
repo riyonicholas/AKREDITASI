@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, Target, MapPin, Calendar, BookOpen, CheckCircle } from 'lucide-react';
 
 export default function PetaPemenuhanCplPage() {
@@ -166,7 +167,7 @@ export default function PetaPemenuhanCplPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.id_cpl || !formData.id_tahun) {
-      alert("Lengkapi semua form wajib");
+      showError("Lengkapi semua form wajib");
       return;
     }
 
@@ -175,7 +176,7 @@ export default function PetaPemenuhanCplPage() {
         : Object.keys(cpmkMkMapping).filter(cpmkId => cpmkMkMapping[cpmkId] && cpmkMkMapping[cpmkId].length > 0);
 
     if (cpmksToProcess.length === 0 && !isEditMode) {
-      alert("Pilih minimal 1 Mata Kuliah untuk setidaknya 1 CPMK");
+      showError("Pilih minimal 1 Mata Kuliah untuk setidaknya 1 CPMK");
       return;
     }
 
@@ -227,17 +228,17 @@ export default function PetaPemenuhanCplPage() {
       }
       
       if (!hasChanges) {
-        alert('Tidak ada perubahan data');
+        showError('Tidak ada perubahan data');
         resetForm();
         return;
       }
       
-      alert('Data pemetaan berhasil disimpan');
+      showSuccess('Data pemetaan berhasil disimpan');
       fetchData();
       resetForm();
     } catch (err) {
       console.error('Error saving data:', err);
-      alert('Gagal menyimpan pemetaan');
+      showError('Gagal menyimpan pemetaan');
     }
   };
 
@@ -282,7 +283,8 @@ export default function PetaPemenuhanCplPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+    const isConfirmed = await showConfirm('Apakah Anda yakin ingin menghapus data ini?', 'Ya, Hapus');
+    if (!isConfirmed) return;
     
     const token = localStorage.getItem('token');
     try {
@@ -291,11 +293,11 @@ export default function PetaPemenuhanCplPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       fetchData();
     } catch (err) {
       console.error('Error deleting data:', err);
-      alert('Gagal menghapus data');
+      showError('Gagal menghapus data');
     }
   };
 

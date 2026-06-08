@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, History, BookOpen, Target, Calendar, Trash } from 'lucide-react';
 
 export default function IsiPembelajaranPage() {
@@ -152,12 +153,12 @@ export default function IsiPembelajaranPage() {
     
     // Validation
     if (!editingMk) {
-      alert('Kolom Mata Kuliah wajib diisi');
+      showError('Kolom Mata Kuliah wajib diisi');
       return;
     }
     
     if (!filterTahun) {
-      alert('Kolom Tahun Akademik wajib diisi');
+      showError('Kolom Tahun Akademik wajib diisi');
       return;
     }
     
@@ -187,7 +188,7 @@ export default function IsiPembelajaranPage() {
         
         const result = await res.json();
         if (!result.success) {
-          alert(result.message || 'Gagal menyimpan data');
+          showError(result.message || 'Gagal menyimpan data');
           return;
         }
       }
@@ -200,12 +201,12 @@ export default function IsiPembelajaranPage() {
         });
       }
       
-      alert('Data berhasil disimpan');
+      showSuccess('Data berhasil disimpan');
       fetchData();
       resetForm();
     } catch (err) {
       console.error('Error saving data:', err);
-      alert('Gagal menyimpan data');
+      showError('Gagal menyimpan data');
     }
   };
 
@@ -227,7 +228,8 @@ export default function IsiPembelajaranPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+    const isConfirmed = await showConfirm('Apakah Anda yakin ingin menghapus data ini?', 'Ya, Hapus');
+    if (!isConfirmed) return;
     
     const token = localStorage.getItem('token');
     try {
@@ -236,16 +238,17 @@ export default function IsiPembelajaranPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       fetchData();
     } catch (err) {
       console.error('Error deleting data:', err);
-      alert('Gagal menghapus data');
+      showError('Gagal menghapus data');
     }
   };
 
   const handleHardDeleteGroup = async (mk) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus permanen semua pemetaan untuk Mata Kuliah ini? Data tidak dapat dikembalikan!')) return;
+    const isConfirmed = await showConfirm('Apakah Anda yakin ingin menghapus permanen semua pemetaan untuk Mata Kuliah ini? Data tidak dapat dikembalikan!', 'Ya, Hapus Permanen');
+    if (!isConfirmed) return;
     
     const itemsToDelete = data.filter(item => item.id_mk === mk.id_mk);
     const token = localStorage.getItem('token');
@@ -257,11 +260,11 @@ export default function IsiPembelajaranPage() {
           headers: { 'Authorization': `Bearer ${token}` }
         });
       }
-      alert('Data berhasil dihapus permanen');
+      showSuccess('Data berhasil dihapus permanen');
       fetchData();
     } catch (err) {
       console.error('Error hard deleting data:', err);
-      alert('Gagal menghapus data secara permanen');
+      showError('Gagal menghapus data secara permanen');
     }
   };
 

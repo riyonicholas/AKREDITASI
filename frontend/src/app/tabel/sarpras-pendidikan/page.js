@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, RotateCcw, Trash, Monitor, Maximize, ExternalLink } from 'lucide-react';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function SarprasPendidikanPage() {
   const router = useRouter();
@@ -123,11 +124,15 @@ export default function SarprasPendidikanPage() {
         }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menyimpan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan saat menyimpan data');
     }
   };
 
@@ -148,7 +153,8 @@ export default function SarprasPendidikanPage() {
   };
 
   const handleSoftDelete = async (id) => {
-    if (!confirm('Yakin hapus data ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus data ini?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/sarpras/5-2-sarana-prasarana/${id}`, {
@@ -156,10 +162,14 @@ export default function SarprasPendidikanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
@@ -171,15 +181,20 @@ export default function SarprasPendidikanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal memulihkan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('Yakin hapus permanen?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus permanen?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/sarpras/5-2-sarana-prasarana/hard/${id}`, {
@@ -187,10 +202,14 @@ export default function SarprasPendidikanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus permanen');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 

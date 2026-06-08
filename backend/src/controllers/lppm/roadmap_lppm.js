@@ -3,8 +3,11 @@ const ModelRoadmap = require('../../models/lppm/roadmap_lppm');
 const roadmapController = {
     index: async (req, res) => {
         try {
-            const { id_prodi, id_tahun } = req.query;
-            const data = await ModelRoadmap.findAllRange(id_prodi, parseInt(id_tahun));
+            const { id_prodi, id_tahun, jenis } = req.query;
+            let data = await ModelRoadmap.findAllRange(id_prodi, parseInt(id_tahun));
+            if (jenis) {
+                data = data.filter(r => r.jenis_roadmap === jenis);
+            }
             res.status(200).json({ success: true, data });
         } catch (error) { res.status(500).json({ success: false, message: error.message }); }
     },

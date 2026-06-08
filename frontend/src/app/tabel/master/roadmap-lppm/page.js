@@ -72,7 +72,10 @@ export default function RoadmapPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      if (result.success) setTahunList(result.data);
+      if (result.success) {
+        const sortedTahun = (result.data || []).sort((a, b) => parseInt(a.tahun) - parseInt(b.tahun));
+        setTahunList(sortedTahun);
+      }
     } catch (err) { console.error(err); }
   };
 
@@ -406,7 +409,7 @@ export default function RoadmapPage() {
               </table>
             </div>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   );

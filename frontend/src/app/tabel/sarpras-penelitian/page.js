@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, RotateCcw, Trash, Beaker, Maximize, ExternalLink } from 'lucide-react';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function SarprasPenelitianPage() {
   const router = useRouter();
@@ -123,11 +124,15 @@ export default function SarprasPenelitianPage() {
         }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menyimpan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan saat menyimpan data');
     }
   };
 
@@ -148,7 +153,8 @@ export default function SarprasPenelitianPage() {
   };
 
   const handleSoftDelete = async (id) => {
-    if (!confirm('Yakin hapus data ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus data ini?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/sarpras/3a1-sarana-prasarana/${id}`, {
@@ -156,10 +162,14 @@ export default function SarprasPenelitianPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
@@ -171,15 +181,20 @@ export default function SarprasPenelitianPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal memulihkan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('Yakin hapus permanen?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus permanen?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/sarpras/3a1-sarana-prasarana/hard/${id}`, {
@@ -187,10 +202,14 @@ export default function SarprasPenelitianPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus permanen');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
@@ -426,12 +445,12 @@ export default function SarprasPenelitianPage() {
                       <td className="px-6 py-5 text-center border-r border-slate-200">
                         {showTrash ? (
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handle(item.id_3a1)} className="p-2 bg-white border border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 shadow-sm rounded-lg transition" title=""> <RotateCcw size={17} /></button>
+                            <button onClick={() => handleRestore(item.id_3a1)} className="p-2 bg-white border border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 shadow-sm rounded-lg transition" title="Restore"> <RotateCcw size={17} /></button>
                             <button onClick={() => handleHardDelete(item.id_3a1)} className="p-2 bg-white border border-slate-200 text-red-600 hover:bg-red-50 hover:border-red-200 shadow-sm rounded-lg transition" title=" "> <Trash2 size={17} /></button>
                           </div>
                         ) : (
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => handle(item)} className="p-2 bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 hover:border-blue-200 shadow-sm rounded-lg transition" title=""><Edit size={17} /></button>
+                            <button onClick={() => handleEdit(item)} className="p-2 bg-white border border-slate-200 text-blue-600 hover:bg-blue-50 hover:border-blue-200 shadow-sm rounded-lg transition" title="Edit"><Edit size={17} /></button>
                             <button onClick={() => handleSoftDelete(item.id_3a1)} className="p-2 bg-white border border-slate-200 text-red-600 hover:bg-red-50 hover:border-red-200 shadow-sm rounded-lg transition-all duration-300 border border-transparent hover:border-red-100" title="Hapus"><Trash2 size={17} /></button>
                           </div>
                         )}
