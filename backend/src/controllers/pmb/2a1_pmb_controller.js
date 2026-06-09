@@ -62,10 +62,10 @@ exports.hardDelete = async (req, res) => {
         // Jika ALA masih memiliki data aktif (tidak di-soft-delete ALA)
         if (dataOriginal.ala_deleted_at === null) {
             // Kita kirim sinyal khusus ke Frontend agar memunculkan Alert Konfirmasi
-            return res.json({ 
-                success: false, 
-                requiresConfirmation: true, 
-                message: "Peringatan: Terdapat data aktif milik ALA pada baris tahun ini. Menghapus permanen akan menghilangkan seluruh data pada baris ini. Lanjutkan?" 
+            return res.json({
+                success: false,
+                requiresConfirmation: true,
+                message: "Peringatan: Terdapat data aktif milik ALA pada baris tahun ini. Menghapus permanen akan menghilangkan seluruh data pada baris ini. Lanjutkan?"
             });
         }
 
@@ -160,7 +160,7 @@ exports.exportExcel = async (req, res) => {
             row.eachCell(cell => { cell.border = borderStyle; cell.alignment = { horizontal: 'center' }; });
 
             // Hitung Total untuk baris bawah
-            for(let i=1; i<rowData.length; i++) totals[i] += (rowData[i] || 0);
+            for (let i = 1; i < rowData.length; i++) totals[i] += (rowData[i] || 0);
         });
 
         // --- SUMMARY ROW (JUMLAH) ---

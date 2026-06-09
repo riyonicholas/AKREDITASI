@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, UserCheck, Shield, Key, Toggl
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function UsersPage() {
   const router = useRouter();
@@ -87,11 +88,15 @@ export default function UsersPage() {
         body: JSON.stringify(formData),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -107,7 +112,8 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin hapus user ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus user ini?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/master/users/${id}`, {
@@ -115,10 +121,14 @@ export default function UsersPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -143,7 +153,7 @@ export default function UsersPage() {
         fetchData();
       }
     } catch (err) {
-      alert('Gagal mengubah status');
+      showError('Gagal mengubah status');
     }
   };
 
@@ -167,7 +177,7 @@ export default function UsersPage() {
 
   const handleResetPassword = async () => {
     if (parseInt(captcha.answer) !== (captcha.a + captcha.b)) {
-      alert('Jawaban Captcha Salah!');
+      showInfo('Jawaban Captcha Salah!');
       return;
     }
 
@@ -182,10 +192,14 @@ export default function UsersPage() {
         body: JSON.stringify({ ...formData, password: 'stikom2026' }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       setShowResetModal(false);
     } catch (err) {
-      alert('Gagal mereset password');
+      showError('Gagal mereset password');
     }
   };
 

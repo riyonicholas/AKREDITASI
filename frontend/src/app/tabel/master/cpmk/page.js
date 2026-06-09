@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, Target, GraduationCap, FileTe
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function CPMKPage() {
   const router = useRouter();
@@ -134,11 +135,15 @@ export default function CPMKPage() {
         body: JSON.stringify({ ...formData, id_prodi: filterProdi }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       if (filterProdi) fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -152,7 +157,8 @@ export default function CPMKPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin ingin menghapus CPMK ini secara permanen?')) return;
+    const isConfirmed = await showConfirm('Yakin ingin menghapus CPMK ini secara permanen?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/master/cpmk/${id}`, {
@@ -160,10 +166,14 @@ export default function CPMKPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 

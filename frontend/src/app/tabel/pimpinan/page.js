@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, History, UserCheck, Briefcase, Calendar } from 'lucide-react';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function PimpinanPage() {
   const router = useRouter();
@@ -16,17 +17,15 @@ export default function PimpinanPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [pegawaiList, setPegawaiList] = useState([]);
-  const [dosenList, setDosenList] = useState([]);
   const [isTrashMode, setIsTrashMode] = useState(false);
 
+  // Request Body API: id_pegawai, periode_mulai, periode_selesai, tupoksi
+  // sks_jabatan → auto-calculated dari master (tidak dikirim)
   const [formData, setFormData] = useState({
     id_pegawai: '',
-    id_jafung: '',
     periode_mulai: '',
     periode_selesai: '',
     tupoksi: '',
-    sks_jabatan: '',
-    nama_jafung_display: '',
   });
 
   useEffect(() => {
@@ -36,7 +35,6 @@ export default function PimpinanPage() {
     } else {
       fetchData(false);
       fetchPegawaiList();
-      fetchDosenList();
     }
   }, [router]);
 
@@ -64,7 +62,8 @@ export default function PimpinanPage() {
   const fetchPegawaiList = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:5000/api/upps/1a1-pimpinan/available-pegawai', {
+      // Sesuai API docs: GET /api/master/pegawai
+      const res = await fetch('http://localhost:5000/api/master/pegawai', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
@@ -76,27 +75,10 @@ export default function PimpinanPage() {
     }
   };
 
-  const fetchDosenList = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('http://localhost:5000/api/master/dosen', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await res.json();
-      if (result.success) {
-        setDosenList(result.data);
-      }
-    } catch (err) {
-      console.error('Error fetching dosen list:', err);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
-
-    // Validasi duplikasi tidak diperlukan lagi untuk mode create 
-    // karena backend sudah menyediakan pegawai yang tersedia saja
 
     const method = editingId ? 'PUT' : 'POST';
     const url = editingId
@@ -110,39 +92,41 @@ export default function PimpinanPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(formData),
+        // Kirim hanya field sesuai API: id_pegawai, periode_mulai, periode_selesai, tupoksi
+        body: JSON.stringify({
+          id_pegawai: formData.id_pegawai,
+          periode_mulai: formData.periode_mulai,
+          periode_selesai: formData.periode_selesai,
+          tupoksi: formData.tupoksi,
+        }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menyimpan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi ke server');
     }
   };
 
   const handleEdit = (item) => {
     setEditingId(item.id_pimpinan);
-    let resolvedIdPegawai = item.id_pegawai ? String(item.id_pegawai) : '';
-    if (!resolvedIdPegawai || resolvedIdPegawai === 'undefined') {
-      const match = pegawaiList.find(p => p.nama_lengkap === item.nama_lengkap);
-      resolvedIdPegawai = match ? String(match.id_pegawai) : '';
-    }
-
     setFormData({
-      id_pegawai: resolvedIdPegawai,
-      id_jafung: String(item.id_jafung || ''),
+      id_pegawai: String(item.id_pegawai || ''),
       periode_mulai: item.periode_mulai || '',
       periode_selesai: item.periode_selesai || '',
       tupoksi: item.tupoksi || '',
-      sks_jabatan: String(item.sks_jabatan || ''),
-      nama_jafung_display: item.nama_jafung || '',
     });
     setShowForm(true);
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin hapus data ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus data ini? Data akan dipindahkan ke Sampah.');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/upps/1a1-pimpinan/${id}`, {
@@ -150,10 +134,14 @@ export default function PimpinanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi ke server');
     }
   };
 
@@ -165,15 +153,20 @@ export default function PimpinanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal memulihkan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData(true);
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi ke server');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('⚠️ PERHATIAN: Data akan dihapus PERMANEN.')) return;
+    const isConfirmed = await showConfirm('⚠️ PERHATIAN: Data akan dihapus PERMANEN dan tidak bisa dipulihkan!');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/upps/1a1-pimpinan/hard/${id}`, {
@@ -181,22 +174,23 @@ export default function PimpinanPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus permanen');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData(true);
     } catch (err) {
-      alert('Terjadi kesalahan server');
+      showError('Terjadi kesalahan server');
     }
   };
 
   const resetForm = () => {
     setFormData({
       id_pegawai: '',
-      id_jafung: '',
       periode_mulai: '',
       periode_selesai: '',
       tupoksi: '',
-      sks_jabatan: '',
-      nama_jafung_display: '',
     });
     setEditingId(null);
     setShowForm(false);
@@ -290,15 +284,7 @@ export default function PimpinanPage() {
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Pilih Pegawai</label>
                     <select 
                       value={formData.id_pegawai} 
-                      onChange={(e) => {
-                        const selectedId = e.target.value;
-                        const dosenInfo = dosenList.find(d => String(d.id_pegawai) === selectedId);
-                        setFormData({
-                          ...formData,
-                          id_pegawai: selectedId,
-                          nama_jafung_display: dosenInfo?.nama_jafung || 'Non-Jafung'
-                        });
-                      }} 
+                      onChange={(e) => setFormData({ ...formData, id_pegawai: e.target.value })} 
                       className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" 
                       required
                     >
@@ -308,30 +294,22 @@ export default function PimpinanPage() {
                       ))}
                     </select>
                   </div>
+                  {/* Periode Mulai */}
                   <div>
                     <Input 
-                      label="Jabatan Fungsional"
-                      value={formData.nama_jafung_display} 
-                      readOnly 
-                      className="bg-slate-100 text-slate-500 cursor-not-allowed" 
-                    />
-                  </div>
-                  <div>
-                    <Input 
-                      type="number"
+                      type="date"
                       label="Periode Mulai"
                       value={formData.periode_mulai} 
                       onChange={(e) => setFormData({ ...formData, periode_mulai: e.target.value })} 
-                      placeholder="Contoh: 2023" 
                     />
                   </div>
+                  {/* Periode Selesai */}
                   <div>
                     <Input 
-                      type="number"
+                      type="date"
                       label="Periode Selesai"
                       value={formData.periode_selesai} 
                       onChange={(e) => setFormData({ ...formData, periode_selesai: e.target.value })} 
-                      placeholder="Contoh: 2026" 
                     />
                   </div>
                   <div className="md:col-span-2">

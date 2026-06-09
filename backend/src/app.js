@@ -18,6 +18,7 @@ const cplRoutes = require('./routes/prodi/cpl');
 const cpmkRoutes = require('./routes/prodi/cpmk');
 const unitKerjaRoutes = require('./routes/master/unitKerjaRoutes');
 const jabatanStrukturalRoutes = require('./routes/master/jabatanStrukturalRoutes');
+const panduanRoutes = require('./routes/master/panduanRoutes');
 
 // Import Routes Upps
 const route1a1 = require('./routes/upps/1a1_pimpinan_dan_tupoksi');
@@ -74,12 +75,14 @@ const route2a2_pmb = require('./routes/pmb/2a2_keragaman_asal_maba');
 
 // Import Routes ALA (Kriteria 2.A.1)
 const route2a1_ala = require('./routes/ala/2a1_data_mahasiswa');
+const route2a3_ala = require('./routes/ala/2a3_kondisi_mahasiswa');
 
 // 2. Middleware Global
 app.use(cors({
     exposedHeaders: ['Content-Disposition']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 3. Definisi Route Utama
 app.use('/api/auth', authRoutes);
@@ -97,6 +100,7 @@ app.use('/api/master/cpl', cplRoutes);
 app.use('/api/master/cpmk', cpmkRoutes);
 app.use('/api/master/unit-kerja', unitKerjaRoutes);
 app.use('/api/master/jabatan-struktural', jabatanStrukturalRoutes);
+app.use('/api/master/panduan', panduanRoutes);
 
 // Routes Upps
 app.use('/api/upps/1a1-pimpinan', route1a1);
@@ -140,6 +144,7 @@ app.use('/api/pmb/2a2-keragaman-asal', route2a2_pmb);
 
 // Routes ALA (Tabel 2.A.1)
 app.use('/api/ala/2a1-data-mahasiswa', route2a1_ala);
+app.use('/api/ala/2a3-kondisi-mahasiswa', route2a3_ala);
 
 // Routes LPPM
 app.use('/api/lppm/roadmap-lppm', lppmRoadmap);

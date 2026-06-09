@@ -5,6 +5,7 @@ import { ArrowLeft, Plus, Download, RefreshCw, Trash2, CheckCircle, Target, Data
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function KondisiMahasiswaPage() {
   const router = useRouter();
@@ -96,6 +97,7 @@ export default function KondisiMahasiswaPage() {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch('http://localhost:5000/api/master/tahun-akademik', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) return; // endpoint belum siap, skip tanpa crash
       const result = await res.json();
       if (result.success) setTahunList(result.data.sort((a, b) => parseInt(a.tahun) - parseInt(b.tahun)) || []);
     } catch (err) { console.error('Error fetching tahun:', err); }
@@ -106,8 +108,12 @@ export default function KondisiMahasiswaPage() {
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/ala/2a3-kondisi-mahasiswa/${filterProdi}/${filterTahun}`, { headers: { 'Authorization': `Bearer ${token}` } });
+      if (!res.ok) {
+        // Endpoint belum siap atau tidak ditemukan — tampilkan data kosong
+        setData({ ts: {}, ts1: {}, ts2: {} });
+        return;
+      }
       const result = await res.json();
-      
       if (result.success) {
         setData(result.data || { ts: {}, ts1: {}, ts2: {} });
         setFormData({
@@ -163,23 +169,24 @@ export default function KondisiMahasiswaPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert("Data berhasil disimpan.");
+        showSuccess("Data berhasil disimpan.");
         setIsModalOpen(false);
         fetchData();
       } else {
-        alert("Gagal menyimpan: " + result.message);
+        showError("Gagal menyimpan: " + result.message);
       }
     } catch (err) {
-      alert("Error: " + err.message);
+      showError("Error: " + err.message);
     }
   };
 
   const handleSoftDelete = async () => {
     if (!data.ts || !data.ts.id_2a3) {
-      alert("Tidak ada data aktif untuk tahun akademik terpilih yang dapat dihapus.");
+      showError("Tidak ada data aktif untuk tahun akademik terpilih yang dapat dihapus.");
       return;
     }
-    if (!confirm('Apakah Anda yakin ingin memindahkan data ini ke Trash?')) return;
+    const isConfirmed = await showConfirm('Apakah Anda yakin ingin memindahkan data ini ke Trash?', 'Ya, Hapus');
+    if (!isConfirmed) return;
     
     const token = localStorage.getItem('token');
     let userId = 1;
@@ -195,13 +202,13 @@ export default function KondisiMahasiswaPage() {
         body: JSON.stringify({ id_2a3: data.ts.id_2a3, user_id: userId })
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       if (result.success) {
         setIsModalOpen(false);
         fetchData();
       }
     } catch (err) {
-      alert("Gagal memproses penghapusan.");
+      showError("Gagal memproses penghapusan.");
     }
   };
 
@@ -213,15 +220,17 @@ export default function KondisiMahasiswaPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       if (result.success) fetchTrashData();
     } catch (err) {
-      alert("Gagal memulihkan data.");
+      showError("Gagal memulihkan data.");
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm("Menghapus data secara permanen akan menghilangkan data tahun akademik ini dari sistem. Lanjutkan?")) return;
+    const isConfirmed = await showConfirm("Menghapus data secara permanen akan menghilangkan data tahun akademik ini dari sistem. Lanjutkan?", 'Ya, Hapus Permanen');
+    if (!isConfirmed) return;
+
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/ala/2a3-kondisi-mahasiswa/hard-delete/${id}`, {
@@ -229,10 +238,10 @@ export default function KondisiMahasiswaPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       if (result.success) fetchTrashData();
     } catch (err) {
-      alert("Gagal menghapus permanen.");
+      showError("Gagal menghapus permanen.");
     }
   };
 

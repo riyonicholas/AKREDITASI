@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, Target, MapPin, Calendar, BookOpen, CheckCircle } from 'lucide-react';
 
 export default function PetaPemenuhanCplPage() {
@@ -166,7 +167,7 @@ export default function PetaPemenuhanCplPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.id_cpl || !formData.id_tahun) {
-      alert("Lengkapi semua form wajib");
+      showError("Lengkapi semua form wajib");
       return;
     }
 
@@ -175,7 +176,7 @@ export default function PetaPemenuhanCplPage() {
         : Object.keys(cpmkMkMapping).filter(cpmkId => cpmkMkMapping[cpmkId] && cpmkMkMapping[cpmkId].length > 0);
 
     if (cpmksToProcess.length === 0 && !isEditMode) {
-      alert("Pilih minimal 1 Mata Kuliah untuk setidaknya 1 CPMK");
+      showError("Pilih minimal 1 Mata Kuliah untuk setidaknya 1 CPMK");
       return;
     }
 
@@ -227,17 +228,17 @@ export default function PetaPemenuhanCplPage() {
       }
       
       if (!hasChanges) {
-        alert('Tidak ada perubahan data');
+        showError('Tidak ada perubahan data');
         resetForm();
         return;
       }
       
-      alert('Data pemetaan berhasil disimpan');
+      showSuccess('Data pemetaan berhasil disimpan');
       fetchData();
       resetForm();
     } catch (err) {
       console.error('Error saving data:', err);
-      alert('Gagal menyimpan pemetaan');
+      showError('Gagal menyimpan pemetaan');
     }
   };
 
@@ -282,7 +283,8 @@ export default function PetaPemenuhanCplPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+    const isConfirmed = await showConfirm('Apakah Anda yakin ingin menghapus data ini?', 'Ya, Hapus');
+    if (!isConfirmed) return;
     
     const token = localStorage.getItem('token');
     try {
@@ -291,11 +293,11 @@ export default function PetaPemenuhanCplPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       fetchData();
     } catch (err) {
       console.error('Error deleting data:', err);
-      alert('Gagal menghapus data');
+      showError('Gagal menghapus data');
     }
   };
 
@@ -382,124 +384,150 @@ export default function PetaPemenuhanCplPage() {
 
         {/* Form Section */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200 p-8 mb-8 animate-in slide-in-from-top-4 duration-500">
-            <h2 className="text-xl font-black text-slate-900 mb-6">{isEditMode ? 'Atur Pemetaan Mata Kuliah' : 'Input Peta Pemenuhan CPL Baru'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className={`grid grid-cols-1 ${isEditMode ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">CPL</label>
-                  <select disabled={isEditMode} value={formData.id_cpl} onChange={(e) => setFormData({...formData, id_cpl: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition font-medium disabled:opacity-60" required>
-                    <option value="">Pilih CPL</option>
-                    {cplList.map(cpl => (
-                      <option key={cpl.id_cpl} value={cpl.id_cpl}>
-                        {cpl.kode_cpl} {cpl.deskripsi_cpl ? `- ${cpl.deskripsi_cpl.substring(0, 60)}${cpl.deskripsi_cpl.length > 60 ? '...' : ''}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {isEditMode && (
+          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
+            <Card title={isEditMode ? 'Atur Pemetaan Mata Kuliah' : 'Input Peta Pemenuhan CPL Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 border-blue-100 shadow-sm">
+              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                {/* Bagian Input CPL, CPMK, Tahun */}
+                <div className={`grid grid-cols-1 ${isEditMode ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-6`}>
                   <div>
-                    <label className="block text-sm font-bold text-slate-600 mb-2">CPMK</label>
-                    <select disabled={true} value={formData.id_cpmk} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition font-medium disabled:opacity-60 cursor-not-allowed text-slate-900" required>
-                      <option value="">Pilih CPMK</option>
-                      {cpmkList.map(cpmk => <option key={cpmk.id_cpmk} value={cpmk.id_cpmk}>{cpmk.kode_cpmk}</option>)}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Tahun Akademik</label>
-                  <select disabled={true} value={formData.id_tahun} onChange={(e) => setFormData({...formData, id_tahun: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-blue-500 focus:bg-white rounded-2xl outline-none transition font-medium disabled:opacity-60 cursor-not-allowed" required>
-                    <option value="">Pilih Tahun</option>
-                    {tahunList.map(t => <option key={t.id_tahun} value={t.id_tahun}>{t.tahun}</option>)}
-                  </select>
-                </div>
-              </div>
-
-              {formData.id_cpl && (
-                <div className="bg-gradient-to-br from-blue-950/50 to-indigo-900/20 border border-blue-900/60 rounded-2xl p-5 flex gap-4 items-start shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="bg-white p-2.5 rounded-xl shadow-sm border border-blue-900/50 text-blue-600 shrink-0">
-                    <BookOpen size={20} />
-                  </div>
-                  <div>
-                    <div className="text-xs font-black text-blue-200 uppercase tracking-widest mb-1.5">
-                      Deskripsi {cplList.find(c => c.id_cpl.toString() === formData.id_cpl.toString())?.kode_cpl}
-                    </div>
-                    <div className="text-sm text-blue-200/80 leading-relaxed font-medium">
-                      {cplList.find(c => c.id_cpl.toString() === formData.id_cpl.toString())?.deskripsi_cpl}
+                    <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-500 mb-1.5 block">CPL</label>
+                    <div className="relative">
+                      <select disabled={isEditMode} value={formData.id_cpl} onChange={(e) => setFormData({...formData, id_cpl: e.target.value})} className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-50 py-3 px-4 pr-10 text-[0.9rem] font-medium text-slate-800 outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" required>
+                        <option value="">-- Pilih CPL --</option>
+                        {cplList.map(cpl => (
+                          <option key={cpl.id_cpl} value={cpl.id_cpl}>
+                            {cpl.kode_cpl} {cpl.deskripsi_cpl ? `- ${cpl.deskripsi_cpl.substring(0, 50)}${cpl.deskripsi_cpl.length > 50 ? '...' : ''}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-
-              {formData.id_cpl && (
-                <div className="mt-6">
-                  <label className="block text-sm font-bold text-slate-600 mb-3">
-                    {isEditMode ? 'Atur Mata Kuliah untuk CPMK ini' : 'Pemetaan CPMK ke Mata Kuliah'}
-                  </label>
                   
-                  {isEditMode ? (
-                    // Edit Mode: show only the selected CPMK
-                    cpmkList.filter(c => c.id_cpmk.toString() === formData.id_cpmk.toString()).map(cpmk => (
-                      <div key={cpmk.id_cpmk} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-4">
-                        <div className="text-sm font-black text-slate-800 mb-3 border-b border-slate-200 pb-2">
-                          {cpmk.kode_cpmk} <span className="text-slate-500 font-medium ml-2">{cpmk.deskripsi_cpmk}</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-72 overflow-y-auto pr-2">
-                          {mataKuliahList.map(mk => {
-                            const isSelected = (cpmkMkMapping[cpmk.id_cpmk] || []).includes(parseInt(mk.id_mk));
-                            return (
-                              <label key={mk.id_mk} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-blue-900/80 border-blue-700 shadow-sm' : 'bg-white border-slate-200 hover:border-blue-800'}`}>
-                                <div className="mt-0.5">
-                                  <input type="checkbox" checked={isSelected} onChange={() => handleMkToggle(cpmk.id_cpmk, mk.id_mk)} className="w-4 h-4 text-blue-600 bg-slate-50/80 border-slate-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer" />
-                                </div>
-                                <div>
-                                  <div className={`text-xs font-black tracking-tight ${isSelected ? 'text-blue-200' : 'text-slate-800'}`}>{mk.kode_mk}</div>
-                                  <div className="text-[10px] text-slate-500 mt-1 font-medium leading-tight">{mk.nama_mk}</div>
-                                  <div className="inline-block mt-2 px-2 py-0.5 bg-slate-50/80 text-slate-500 rounded text-[9px] font-black uppercase">Semester {mk.semester}</div>
-                                </div>
-                              </label>
-                            );
-                          })}
+                  {isEditMode && (
+                    <div>
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-500 mb-1.5 block">CPMK</label>
+                      <div className="relative">
+                        <select disabled={true} value={formData.id_cpmk} className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-100 py-3 px-4 pr-10 text-[0.9rem] font-bold text-slate-500 outline-none transition-all cursor-not-allowed" required>
+                          <option value="">-- Pilih CPMK --</option>
+                          {cpmkList.map(cpmk => <option key={cpmk.id_cpmk} value={cpmk.id_cpmk}>{cpmk.kode_cpmk}</option>)}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    // Input Baru: show all CPMKs
-                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                      {cpmkList.map(cpmk => (
-                        <div key={cpmk.id_cpmk} className="bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                          <div className="text-sm font-black text-slate-800 mb-3 border-b border-slate-200 pb-2">
-                            {cpmk.kode_cpmk} <span className="text-slate-500 font-medium ml-2">{cpmk.deskripsi_cpmk}</span>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-500 mb-1.5 block">Tahun Akademik</label>
+                    <div className="relative">
+                      <select disabled={true} value={formData.id_tahun} onChange={(e) => setFormData({...formData, id_tahun: e.target.value})} className="w-full appearance-none rounded-xl border border-slate-200 bg-slate-100 py-3 px-4 pr-10 text-[0.9rem] font-bold text-slate-500 outline-none transition-all cursor-not-allowed" required>
+                        <option value="">-- Pilih Tahun --</option>
+                        {tahunList.map(t => <option key={t.id_tahun} value={t.id_tahun}>{t.tahun}</option>)}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Deskripsi CPL Info Box */}
+                {formData.id_cpl && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-xl p-5 flex gap-4 items-start animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="bg-white p-3 rounded-xl shadow-sm text-blue-600 shrink-0">
+                      <BookOpen size={20} />
+                    </div>
+                    <div>
+                      <div className="text-[0.75rem] font-black text-blue-700 uppercase tracking-widest mb-1">
+                        Deskripsi {cplList.find(c => c.id_cpl.toString() === formData.id_cpl.toString())?.kode_cpl}
+                      </div>
+                      <div className="text-[0.9rem] text-blue-900 leading-relaxed font-medium">
+                        {cplList.find(c => c.id_cpl.toString() === formData.id_cpl.toString())?.deskripsi_cpl}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bagian Mata Kuliah Selection */}
+                {formData.id_cpl && (
+                  <div className="mt-6 border-t border-slate-100 pt-6">
+                    <label className="text-[0.9rem] font-bold text-slate-800 mb-4 flex items-center gap-2">
+                      <Target size={18} className="text-violet-500" />
+                      {isEditMode ? 'Atur Mata Kuliah untuk CPMK ini' : 'Pemetaan CPMK ke Mata Kuliah'}
+                    </label>
+                    
+                    {isEditMode ? (
+                      // Edit Mode: show only the selected CPMK
+                      cpmkList.filter(c => c.id_cpmk.toString() === formData.id_cpmk.toString()).map(cpmk => (
+                        <div key={cpmk.id_cpmk} className="bg-white p-5 rounded-xl border border-slate-200 mb-4 shadow-sm">
+                          <div className="text-sm font-black text-slate-800 mb-4 border-b border-slate-100 pb-3 flex flex-col md:flex-row md:items-center gap-2">
+                            <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg">{cpmk.kode_cpmk}</span> 
+                            <span className="text-slate-600 font-medium">{cpmk.deskripsi_cpmk}</span>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
                             {mataKuliahList.map(mk => {
                               const isSelected = (cpmkMkMapping[cpmk.id_cpmk] || []).includes(parseInt(mk.id_mk));
                               return (
-                                <label key={mk.id_mk} className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-blue-900/80 border-blue-700 shadow-sm' : 'bg-white border-slate-200 hover:border-blue-800'}`}>
-                                  <div className="mt-0.5">
-                                    <input type="checkbox" checked={isSelected} onChange={() => handleMkToggle(cpmk.id_cpmk, mk.id_mk)} className="w-4 h-4 text-blue-600 bg-slate-50/80 border-slate-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer" />
+                                <label key={mk.id_mk} className={`relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${isSelected ? 'bg-blue-50/50 border-blue-400 ring-1 ring-blue-400 shadow-sm' : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
+                                  <div className="mt-0.5 shrink-0">
+                                    <input type="checkbox" checked={isSelected} onChange={() => handleMkToggle(cpmk.id_cpmk, mk.id_mk)} className="w-5 h-5 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer transition-all" />
                                   </div>
-                                  <div>
-                                    <div className={`text-xs font-black tracking-tight ${isSelected ? 'text-blue-200' : 'text-slate-800'}`}>{mk.kode_mk}</div>
-                                    <div className="text-[10px] text-slate-500 mt-1 font-medium leading-tight">{mk.nama_mk}</div>
-                                    <div className="inline-block mt-2 px-2 py-0.5 bg-slate-50/80 text-slate-500 rounded text-[9px] font-black uppercase">Semester {mk.semester}</div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className={`text-[0.85rem] font-black tracking-tight ${isSelected ? 'text-blue-800' : 'text-slate-800'}`}>{mk.kode_mk}</div>
+                                    <div className={`text-[0.75rem] mt-1 font-medium leading-snug ${isSelected ? 'text-blue-700/80' : 'text-slate-500'}`}>{mk.nama_mk}</div>
+                                    <div className={`inline-flex items-center mt-2.5 px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-wider ${isSelected ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>Semester {mk.semester}</div>
                                   </div>
                                 </label>
                               );
                             })}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
+                      ))
+                    ) : (
+                      // Input Baru: show all CPMKs
+                      <div className="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                        {cpmkList.map(cpmk => (
+                          <div key={cpmk.id_cpmk} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <div className="text-sm font-black text-slate-800 mb-4 border-b border-slate-100 pb-3 flex flex-col md:flex-row md:items-center gap-2">
+                              <span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg">{cpmk.kode_cpmk}</span> 
+                              <span className="text-slate-600 font-medium">{cpmk.deskripsi_cpmk}</span>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-72 overflow-y-auto pr-2 custom-scrollbar">
+                              {mataKuliahList.map(mk => {
+                                const isSelected = (cpmkMkMapping[cpmk.id_cpmk] || []).includes(parseInt(mk.id_mk));
+                                return (
+                                  <label key={mk.id_mk} className={`relative flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-all duration-200 ${isSelected ? 'bg-blue-50/50 border-blue-400 ring-1 ring-blue-400 shadow-sm' : 'bg-white border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}>
+                                    <div className="mt-0.5 shrink-0">
+                                      <input type="checkbox" checked={isSelected} onChange={() => handleMkToggle(cpmk.id_cpmk, mk.id_mk)} className="w-5 h-5 text-blue-600 bg-white border-slate-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer transition-all" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className={`text-[0.85rem] font-black tracking-tight ${isSelected ? 'text-blue-800' : 'text-slate-800'}`}>{mk.kode_mk}</div>
+                                      <div className={`text-[0.75rem] mt-1 font-medium leading-snug ${isSelected ? 'text-blue-700/80' : 'text-slate-500'}`}>{mk.nama_mk}</div>
+                                      <div className={`inline-flex items-center mt-2.5 px-2 py-0.5 rounded-md text-[0.65rem] font-bold uppercase tracking-wider ${isSelected ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-500'}`}>Semester {mk.semester}</div>
+                                    </div>
+                                  </label>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                <button type="button" onClick={resetForm} className="px-8 py-3 bg-slate-50/80 text-slate-500 rounded-2xl hover:bg-slate-200 transition font-bold">Batal</button>
-                <button type="submit" className="px-10 py-3 bg-blue-600 text-slate-900 rounded-2xl hover:bg-violet-700 transition font-black shadow-lg shadow-violet-200/50">{isEditMode ? 'Update Pemetaan' : 'Simpan Pemetaan'}</button>
-              </div>
-            </form>
+                <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                  <Button type="button" variant="outline" onClick={resetForm} className="w-full sm:w-auto">Batal</Button>
+                  <Button type="submit" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 shadow-md shadow-blue-200">
+                    {isEditMode ? 'Update Pemetaan' : 'Simpan Pemetaan'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
           </div>
         )}
 

@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, Briefcase, UserPlus, Users } 
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function PegawaiPage() {
   const router = useRouter();
@@ -105,11 +106,15 @@ export default function PegawaiPage() {
         body: JSON.stringify(formData),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -126,7 +131,8 @@ export default function PegawaiPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin hapus data ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus data ini?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/master/pegawai/${id}`, {
@@ -134,10 +140,14 @@ export default function PegawaiPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 

@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, BookOpen, Users, Map, Activity, ExternalLink, Database } from 'lucide-react';
 import { useTheme } from '../../../context/ThemeContext';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 function PenelitianContent() {
   const router = useRouter();
@@ -35,7 +36,7 @@ function PenelitianContent() {
     hki: []
   });
 
-  const showError = (msg) => { setError(msg); setTimeout(() => setError(''), 5000); };
+
 
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab');
@@ -148,7 +149,10 @@ function PenelitianContent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!roadmap) return alert('Roadmap tidak ditemukan!');
+    if (!roadmap) {
+        showError('Roadmap tidak ditemukan!');
+        return;
+    }
     const token = localStorage.getItem('token');
 
     const payload = {
@@ -184,15 +188,15 @@ function PenelitianContent() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         setShowForm(false);
         fetchData();
         resetForm();
       } else {
-        alert(result.message);
+        showError(result.message);
       }
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan');
     }
   };
 
@@ -224,6 +228,17 @@ function PenelitianContent() {
     return `Rp ${Number(val).toLocaleString('id-ID')}`;
   };
 
+  const formatRupiahInput = (value) => {
+    if (value === null || value === undefined) return '';
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  };
+
+  const handleDanaChange = (e) => {
+    let val = e.target.value.replace(/[^0-9]/g, '');
+    if (!val) val = '0';
+    setFormData({ ...formData, induk: { ...formData.induk, jumlah_dana: parseInt(val, 10) } });
+  };
+
   const resetForm = () => {
     setEditingId(null);
     setFormData({
@@ -233,17 +248,20 @@ function PenelitianContent() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Yakin ingin memindahkan data ini ke tempat sampah?')) return;
+    const isConfirmed = await showConfirm('Yakin ingin memindahkan data ini ke tempat sampah?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/lppm/3a2-penelitian-dtpr/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
+      } else {
+        showError(result.message || 'Gagal menghapus');
       }
     } catch (err) {
-      alert('Gagal menghapus');
+      showError('Gagal menghapus');
     }
   };
 
@@ -324,9 +342,9 @@ function PenelitianContent() {
               <div className="relative z-10 flex flex-col md:flex-row items-center gap-6">
 
                 {/* Roadmap Node */}
-                <div className="flex-1 bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-900/20 text-white w-full md:w-auto relative">
+                <div className="flex-1 bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg shadow-emerald-900/20 text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm w-full md:w-auto relative">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"><Map size={24} className="text-white" /></div>
+                    <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm"><Map size={24} className="text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" /></div>
                     <span className="text-[11px] font-black uppercase tracking-widest text-emerald-50">Master Roadmap</span>
                   </div>
                   <h3 className="text-xl font-black mb-1">{roadmap.jenis_roadmap}</h3>
@@ -405,7 +423,7 @@ function PenelitianContent() {
                 </div>
 
                 <div className="flex gap-3 w-full md:w-auto">
-                  <button onClick={() => { resetForm(); setShowForm(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-bold text-sm shadow-md">
+                  <button onClick={() => { resetForm(); setShowForm(true); }} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm px-5 py-2.5 rounded-xl hover:bg-blue-700 transition font-bold text-sm shadow-md">
                     <Plus size={18} /> Tambah Penelitian
                   </button>
                 </div>
@@ -427,22 +445,22 @@ function PenelitianContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-6 rounded-2xl border border-slate-200/60">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Pilih Dosen</label>
-                        <select value={formData.induk.id_dosen} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, id_dosen: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" required>
+                        <select value={formData.induk.id_dosen} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, id_dosen: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" required>
                           <option value="">-- Pilih --</option>
                           {dosenList.map(d => <option key={d.id_dosen} value={d.id_dosen}>{d.nama_lengkap}</option>)}
                         </select>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Judul Penelitian</label>
-                        <input type="text" value={formData.induk.judul} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, judul: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" required />
+                        <input type="text" value={formData.induk.judul} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, judul: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" required />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Jenis Hibah</label>
-                        <input type="text" value={formData.induk.jenis_hibah} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jenis_hibah: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                        <input type="text" value={formData.induk.jenis_hibah} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jenis_hibah: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Sumber</label>
-                        <select value={formData.induk.sumber} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, sumber: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white">
+                        <select value={formData.induk.sumber} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, sumber: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm">
                           <option value="">-- Pilih --</option>
                           <option value="Internasional">Internasional</option>
                           <option value="Nasional">Nasional</option>
@@ -452,20 +470,20 @@ function PenelitianContent() {
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Mhs Terlibat</label>
-                          <input type="number" value={formData.induk.jumlah_mahasiswa} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_mahasiswa: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                          <input type="number" value={formData.induk.jumlah_mahasiswa} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_mahasiswa: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Durasi (Thn)</label>
-                          <input type="number" value={formData.induk.durasi} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, durasi: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                          <input type="number" value={formData.induk.durasi} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, durasi: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1">Dana (Rp)</label>
-                          <input type="number" value={formData.induk.jumlah_dana} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, jumlah_dana: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                          <input type="text" value={formatRupiahInput(formData.induk.jumlah_dana)} onChange={handleDanaChange} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                         </div>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1">Link Bukti Induk</label>
-                        <input type="url" value={formData.induk.link_bukti} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, link_bukti: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-white" />
+                        <input type="url" value={formData.induk.link_bukti} onChange={e => setFormData({ ...formData, induk: { ...formData.induk, link_bukti: e.target.value } })} className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-lg text-sm text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                       </div>
                     </div>
                   </div>
@@ -480,13 +498,13 @@ function PenelitianContent() {
                     </div>
                     {formData.kerjasama.map((k, i) => (
                       <div key={i} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-violet-50 p-4 rounded-xl border border-violet-200/60 relative">
-                        <button type="button" onClick={() => handleRemoveSubItem('kerjasama', i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
-                        <input type="text" placeholder="Judul Kerjasama" value={k.judul || ''} onChange={e => handleSubItemChange('kerjasama', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <input type="text" placeholder="Mitra" value={k.mitra || ''} onChange={e => handleSubItemChange('kerjasama', i, 'mitra', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <select value={k.sumber || ''} onChange={e => handleSubItemChange('kerjasama', i, 'sumber', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white">
+                        <button type="button" onClick={() => handleRemoveSubItem('kerjasama', i)} className="absolute -top-2 -right-2 bg-red-500 text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm rounded-full p-1"><Trash2 size={12} /></button>
+                        <input type="text" placeholder="Judul Kerjasama" value={k.judul || ''} onChange={e => handleSubItemChange('kerjasama', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
+                        <input type="text" placeholder="Mitra" value={k.mitra || ''} onChange={e => handleSubItemChange('kerjasama', i, 'mitra', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
+                        <select value={k.sumber || ''} onChange={e => handleSubItemChange('kerjasama', i, 'sumber', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm">
                           <option value="">- Sumber -</option><option value="Internasional">Internasional</option><option value="Nasional">Nasional</option><option value="Lokal">Lokal</option>
                         </select>
-                        <input type="text" placeholder="Link Bukti" value={k.link || ''} onChange={e => handleSubItemChange('kerjasama', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
+                        <input type="text" placeholder="Link Bukti" value={k.link || ''} onChange={e => handleSubItemChange('kerjasama', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                       </div>
                     ))}
                   </div>
@@ -499,9 +517,9 @@ function PenelitianContent() {
                     </div>
                     {formData.publikasi.map((p, i) => (
                       <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-orange-50 p-4 rounded-xl border border-orange-200/60 relative">
-                        <button type="button" onClick={() => handleRemoveSubItem('publikasi', i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
-                        <input type="text" placeholder="Judul Publikasi" value={p.judul || ''} onChange={e => handleSubItemChange('publikasi', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <select value={p.jenis || ''} onChange={e => handleSubItemChange('publikasi', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white">
+                        <button type="button" onClick={() => handleRemoveSubItem('publikasi', i)} className="absolute -top-2 -right-2 bg-red-500 text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm rounded-full p-1"><Trash2 size={12} /></button>
+                        <input type="text" placeholder="Judul Publikasi" value={p.judul || ''} onChange={e => handleSubItemChange('publikasi', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
+                        <select value={p.jenis || ''} onChange={e => handleSubItemChange('publikasi', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm">
                           <option value="">- Jenis Publikasi -</option>
                           <option value="IB">Internasional Bereputasi (IB)</option>
                           <option value="I">Internasional tidak Bereputasi (I)</option>
@@ -511,7 +529,7 @@ function PenelitianContent() {
                           <option value="S4">Jurnal Sinta 4 (S4)</option>
                           <option value="T">Tidak Terakreditasi (T)</option>
                         </select>
-                        <input type="text" placeholder="Link Bukti" value={p.link || ''} onChange={e => handleSubItemChange('publikasi', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
+                        <input type="text" placeholder="Link Bukti" value={p.link || ''} onChange={e => handleSubItemChange('publikasi', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                       </div>
                     ))}
                   </div>
@@ -524,19 +542,19 @@ function PenelitianContent() {
                     </div>
                     {formData.hki.map((h, i) => (
                       <div key={i} className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200/60 relative">
-                        <button type="button" onClick={() => handleRemoveSubItem('hki', i)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><Trash2 size={12} /></button>
-                        <input type="text" placeholder="Judul HKI" value={h.judul || ''} onChange={e => handleSubItemChange('hki', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
-                        <select value={h.jenis || ''} onChange={e => handleSubItemChange('hki', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white">
+                        <button type="button" onClick={() => handleRemoveSubItem('hki', i)} className="absolute -top-2 -right-2 bg-red-500 text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm rounded-full p-1"><Trash2 size={12} /></button>
+                        <input type="text" placeholder="Judul HKI" value={h.judul || ''} onChange={e => handleSubItemChange('hki', i, 'judul', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
+                        <select value={h.jenis || ''} onChange={e => handleSubItemChange('hki', i, 'jenis', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm">
                           <option value="">- Jenis HKI -</option><option value="Paten">Paten</option><option value="Hak Cipta">Hak Cipta</option><option value="Desain Industri">Desain Industri</option>
                         </select>
-                        <input type="text" placeholder="Link Bukti" value={h.link || ''} onChange={e => handleSubItemChange('hki', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-white" />
+                        <input type="text" placeholder="Link Bukti" value={h.link || ''} onChange={e => handleSubItemChange('hki', i, 'link', e.target.value)} className="w-full px-3 py-2 bg-white border rounded-lg text-xs text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm" />
                       </div>
                     ))}
                   </div>
 
                   <div className="flex justify-end gap-3 pt-6 border-t">
                     <button type="button" onClick={() => setShowForm(false)} className="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-gray-700 transition">Batal</button>
-                    <button type="submit" className="px-8 py-2.5 bg-blue-600 text-white rounded-xl font-black shadow-lg shadow-blue-900/20 hover:bg-blue-700 transition">{editingId ? 'Simpan Perubahan' : 'Simpan Data'}</button>
+                    <button type="submit" className="px-8 py-2.5 bg-blue-600 text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm rounded-xl font-black shadow-lg shadow-blue-900/20 hover:bg-blue-700 transition">{editingId ? 'Simpan Perubahan' : 'Simpan Data'}</button>
                   </div>
                 </form>
               </div>
@@ -601,12 +619,12 @@ function PenelitianContent() {
                                   <td className="px-4 py-4 border-r border-b border-slate-200 text-xs font-bold whitespace-nowrap">{formatNominal(ts1Val)}</td>
                                   <td className="px-4 py-4 border-r border-b border-slate-200 text-xs font-bold whitespace-nowrap">{formatNominal(tsVal)}</td>
                                   <td className="px-4 py-4 border-r border-b border-slate-200">
-                                    {item.link_bukti && <a href={item.link_bukti} target="_blank" className="p-1.5 bg-slate-100 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition inline-block"><ExternalLink size={14} /></a>}
+                                    {item.link_bukti && <a href={item.link_bukti} target="_blank" className="p-1.5 bg-slate-100 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm transition inline-block"><ExternalLink size={14} /></a>}
                                   </td>
                                   <td className="px-4 py-4 border-r border-b border-slate-200">
                                     <div className="flex items-center justify-center gap-1">
-                                      <button onClick={() => handleEdit(item)} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition" title="Edit"><Edit size={14} /></button>
-                                      <button onClick={() => handleDelete(item.id_3a2)} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition" title="Hapus"><Trash2 size={14} /></button>
+                                      <button onClick={() => handleEdit(item)} className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm transition" title="Edit"><Edit size={14} /></button>
+                                      <button onClick={() => handleDelete(item.id_3a2)} className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-slate-900 border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 shadow-sm transition" title="Hapus"><Trash2 size={14} /></button>
                                     </div>
                                   </td>
                                 </tr>

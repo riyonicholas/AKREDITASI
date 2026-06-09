@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, RotateCcw, Trash, Wallet, TrendingUp, History, ExternalLink } from 'lucide-react';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function PenggunaanDanaPage() {
   const router = useRouter();
@@ -159,11 +160,15 @@ export default function PenggunaanDanaPage() {
         }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menyimpan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan saat menyimpan data');
     }
   };
 
@@ -180,7 +185,8 @@ export default function PenggunaanDanaPage() {
   };
 
   const handleSoftDelete = async (id) => {
-    if (!confirm('Yakin hapus data ini?')) return;
+    const isConfirmed = await showConfirm('Yakin hapus data ini? Data akan dipindahkan ke Sampah.');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/keuangan/1a3-penggunaan-dana/${id}`, {
@@ -188,41 +194,54 @@ export default function PenggunaanDanaPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
   const handleRestore = async (id) => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/keuangan/1a3-penggunaan-dana/${id}/restore`, {
+      const res = await fetch(`http://localhost:5000/api/keuangan/1a3-penggunaan-dana/restore/${id}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal memulihkan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('Hapus permanen?')) return;
+    const isConfirmed = await showConfirm('Hapus permanen? Data tidak dapat dikembalikan.');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`http://localhost:5000/api/keuangan/1a3-penggunaan-dana/${id}/hard`, {
+      const res = await fetch(`http://localhost:5000/api/keuangan/1a3-penggunaan-dana/hard/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus permanen');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
-      alert('Terjadi kesalahan');
+      showError('Terjadi kesalahan koneksi');
     }
   };
 
@@ -397,7 +416,17 @@ export default function PenggunaanDanaPage() {
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Jumlah Dana (Rp)</label>
-                    <input type="number" value={formData.jumlah_dana} onChange={(e) => setFormData({...formData, jumlah_dana: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" placeholder="Masukkan angka saja" required />
+                    <input 
+                      type="text" 
+                      value={formData.jumlah_dana ? new Intl.NumberFormat('id-ID').format(formData.jumlah_dana) : ''} 
+                      onChange={(e) => {
+                        const rawValue = e.target.value.replace(/[^0-9]/g, '');
+                        setFormData({ ...formData, jumlah_dana: rawValue });
+                      }} 
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                      placeholder="Contoh: 1.000.000" 
+                      required 
+                    />
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Link Bukti (G-Drive / PDF)</label>
@@ -460,7 +489,7 @@ export default function PenggunaanDanaPage() {
                         </td>
                         <td className="px-8 py-6 border-r border-slate-200">
                           <div className="inline-flex items-center gap-2">
-                            <button onClick={() => handle(item.id_penggunaan)} className="p-2 bg-white border border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 shadow-sm rounded-lg transition" title=""> <RotateCcw size={17} /></button>
+                            <button onClick={() => handleRestore(item.id_penggunaan)} className="p-2 bg-white border border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200 shadow-sm rounded-lg transition" title="Restore"> <RotateCcw size={17} /></button>
                             <button onClick={() => handleHardDelete(item.id_penggunaan)} className="p-2 bg-white border border-slate-200 text-red-600 hover:bg-red-50 hover:border-red-200 shadow-sm rounded-lg transition" title=" "> <Trash2 size={17} /></button>
                           </div>
                         </td>

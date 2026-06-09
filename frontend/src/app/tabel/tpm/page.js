@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, RotateCcw, Trash, ShieldCheck, UserCheck, History, ExternalLink, Activity } from 'lucide-react';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function TPMPage() {
   const router = useRouter();
@@ -117,11 +118,15 @@ export default function TPMPage() {
         body: JSON.stringify({ ...formData, id_tahun: filterIdTahun }),
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menyimpan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
       resetForm();
     } catch (err) {
-      showError('Terjadi kesalahan');
+      showError('Terjadi kesalahan saat menyimpan data');
     }
   };
 
@@ -141,7 +146,8 @@ export default function TPMPage() {
   };
 
   const handleSoftDelete = async (id) => {
-    if (!confirm('Pindahkan ke tempat sampah?')) return;
+    const isConfirmed = await showConfirm('Pindahkan ke tempat sampah?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/tpm/1b-spmi/${id}`, {
@@ -149,7 +155,11 @@ export default function TPMPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
       showError('Gagal menghapus data');
@@ -164,7 +174,11 @@ export default function TPMPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal memulihkan data');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
       showError('Gagal memulihkan data');
@@ -172,7 +186,8 @@ export default function TPMPage() {
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('HAPUS PERMANEN?')) return;
+    const isConfirmed = await showConfirm('HAPUS PERMANEN?');
+    if (!isConfirmed) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/tpm/1b-spmi/hard/${id}`, {
@@ -180,7 +195,11 @@ export default function TPMPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success === false || res.status >= 400) {
+        showError(result.message || 'Gagal menghapus permanen');
+      } else {
+        showSuccess(result.message);
+      }
       fetchData();
     } catch (err) {
       showError('Gagal menghapus permanen');

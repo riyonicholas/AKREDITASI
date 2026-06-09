@@ -260,7 +260,44 @@ export default function DashboardPage() {
   const name = user?.nama ? user.nama.split(" ")[0] : user?.username || "Admin";
   const [showAll, setShowAll] = useState(false);
   const [activeGroup, setActiveGroup] = useState(null); // State untuk detail chart
-  const visibleMenus = showAll ? TABEL_MENU_GROUPS : TABEL_MENU_GROUPS.slice(0, 3);
+
+  // Saring menu & chart berdasarkan unit kerja (RBAC)
+  const userUnit = user?.unit ? user.unit.trim().toUpperCase() : "";
+
+  const filteredTabelMenuGroups = TABEL_MENU_GROUPS.filter(group => {
+    const groupName = group.group.trim().toUpperCase();
+    if (userUnit === 'ADMIN' || userUnit === 'ADMINISTRATOR') return true;
+    return groupName === userUnit;
+  });
+
+  const filteredChartGroups = CHART_GROUPS.filter(group => {
+    const groupName = group.label.trim().toUpperCase();
+    if (userUnit === 'ADMIN' || userUnit === 'ADMINISTRATOR') return true;
+    return groupName === userUnit;
+  });
+
+  const filteredUniqueChartKeys = Array.from(new Set(filteredChartGroups.flatMap(g => g.items.map(i => i.endpoint))));
+
+  // ─── Whitelist endpoint yang sudah siap di backend ───────────────────────
+  // Endpoint di LUAR daftar ini tidak akan di-fetch sama sekali (enabled:false)
+  // → tidak ada request = tidak ada error merah di console
+  // Tambahkan endpoint di sini setelah backend siap.
+  const READY_ENDPOINTS = new Set([
+    "master/pegawai",
+    "master/dosen",
+    "master/tendik",
+    "master/prodi",
+    "master/users",
+    "upps/1a1-pimpinan",
+    "kepegawaian/1a5-tendik",
+    "prodi/2b1-isi-pembelajaran",
+    "prodi/2b2-pemetaan-cpl",
+    "prodi/2b3-peta-pemenuhan",
+    "prodi/2c-fleksibilitas",
+    "sisfo/5-1-sistem-tata-kelola",
+  ]);
+
+  const visibleMenus = showAll ? filteredTabelMenuGroups : filteredTabelMenuGroups.slice(0, 3);
 
   // State Kalender
   const [selectedDate, setSelectedDate] = useState(null);
@@ -290,23 +327,31 @@ export default function DashboardPage() {
   };
 
   // Fetch jumlah data tiap endpoint untuk donut chart
+  // retry: 0 → tidak retry jika 404/500 (endpoint belum tersedia di backend)
+  // queryFn silent-fail → return 0 jika error, tidak spam console
   const chartResults = useQueries({
-    queries: UNIQUE_CHART_KEYS.map(key => ({
-      queryKey: ["chart", key],
-      queryFn: () => createService(key).getAll(),
-      select: (res) => Array.isArray(res) ? res.length : (res?.data?.length ?? 0),
-      retry: false,
+    queries: filteredUniqueChartKeys.map(key => ({
+      queryKey: ["dashboard-chart", key],
+      queryFn: async () => {
+        try {
+          const res = await createService(key).getAll();
+          return Array.isArray(res) ? res.length : (res?.data?.length ?? 0);
+        } catch {
+          return 0;
+        }
+      },
+      enabled: READY_ENDPOINTS.has(key), // ← tidak fetch jika belum siap
+      retry: 0,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 menit — tidak re-fetch berulang
     }))
   });
 
   // Map hasil query ke tiap CHART_GROUP
   // Data default (Overview)
-  // Map hasil query ke tiap CHART_GROUP
-  // Data default (Overview)
-  const overviewData = CHART_GROUPS.map(group => {
+  const overviewData = filteredChartGroups.map(group => {
     const count = group.items.reduce((sum, item) => {
-      const idx = UNIQUE_CHART_KEYS.indexOf(item.endpoint);
+      const idx = filteredUniqueChartKeys.indexOf(item.endpoint);
       const actualCount = chartResults[idx]?.data;
       return sum + (actualCount ?? 0);
     }, 0);
@@ -322,10 +367,10 @@ export default function DashboardPage() {
   let chartTitle = "TOTAL DATA";
 
   if (activeGroup) {
-    const groupObj = CHART_GROUPS.find(g => g.label === activeGroup);
+    const groupObj = filteredChartGroups.find(g => g.label === activeGroup);
     if (groupObj) {
       displayData = groupObj.items.map((item, i) => {
-        const idx = UNIQUE_CHART_KEYS.indexOf(item.endpoint);
+        const idx = filteredUniqueChartKeys.indexOf(item.endpoint);
         const actualCount = chartResults[idx]?.data;
         return {
           label: item.label,
@@ -693,7 +738,7 @@ export default function DashboardPage() {
           <div className="w-1 h-6 bg-[#facc15] rounded-full"></div>
           <h2 className="text-[1rem] font-black text-[#0f172a] tracking-wide uppercase m-0">Akses Cepat Menu Tabel</h2>
           <span className="text-[0.65rem] font-bold text-[#94a3b8] bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-widest">
-            {TABEL_MENU_GROUPS.length} Menu
+            {filteredTabelMenuGroups.length} Menu
           </span>
         </div>
 
@@ -741,24 +786,26 @@ export default function DashboardPage() {
         </div>
 
         {/* Toggle Button */}
-        <div className="flex justify-center mt-5">
-          <button
-            onClick={() => setShowAll(v => !v)}
-            className="flex items-center gap-2.5 px-6 py-3 rounded-full border-2 border-[#0f172a]/10 text-[#0f172a] text-[0.85rem] font-bold hover:bg-[#0f172a] hover:text-white hover:border-[#0f172a] transition-all duration-300 cursor-pointer bg-white shadow-sm"
-          >
-            {showAll ? (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
-                Tampilkan Lebih Sedikit
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                Tampilkan Semua ({TABEL_MENU_GROUPS.length} Menu)
-              </>
-            )}
-          </button>
-        </div>
+        {filteredTabelMenuGroups.length > 3 && (
+          <div className="flex justify-center mt-5">
+            <button
+              onClick={() => setShowAll(v => !v)}
+              className="flex items-center gap-2.5 px-6 py-3 rounded-full border-2 border-[#0f172a]/10 text-[#0f172a] text-[0.85rem] font-bold hover:bg-[#0f172a] hover:text-white hover:border-[#0f172a] transition-all duration-300 cursor-pointer bg-white shadow-sm"
+            >
+              {showAll ? (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                  Tampilkan Lebih Sedikit
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  Tampilkan Semua ({filteredTabelMenuGroups.length} Menu)
+                </>
+              )}
+            </button>
+          </div>
+        )}
       </div>
     </div>
 

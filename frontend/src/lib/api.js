@@ -30,12 +30,14 @@ export const createService = (endpoint) => ({
     getAll: async () => {
         try {
             const res = await api.get(`/${endpoint}`);
-            // TanStack Query mengharapkan data dikembalikan langsung atau dalam format tertentu
-            // Berdasarkan penggunaan di Navbar (res.data.length), kita kembalikan res.data
             return res.data;
         } catch (error) {
-            console.error(`Error fetching data from ${endpoint}:`, error);
-            throw error;
+            // 4xx/5xx = endpoint belum siap di backend → kembalikan [] tanpa throw
+            // Hanya log jika bukan error HTTP biasa (misal: server mati / network down)
+            if (!error.response) {
+                console.error(`[api] Network error on ${endpoint}:`, error.message);
+            }
+            return [];
         }
     },
 

@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Download, RefreshCw, Edit, Trash2, Users, BookOpen, Fi
 import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 
 export default function DataMahasiswaPage() {
   const router = useRouter();
@@ -242,23 +243,23 @@ export default function DataMahasiswaPage() {
       }
 
       if (successPmb && successAla) {
-        alert(userRole === 'admin' ? 'Data berhasil disimpan' : message);
+        showSuccess(userRole === 'admin' ? 'Data berhasil disimpan' : message);
         fetchData();
         resetForm();
       } else {
-        alert('Terjadi kesalahan saat menyimpan data');
+        showError('Terjadi kesalahan saat menyimpan data');
       }
     } catch (err) {
       console.error('Error saving data:', err);
       console.error('Error details:', err.message);
-      alert('Gagal menyimpan data: ' + err.message);
+      showError('Gagal menyimpan data: ' + err.message);
     }
   };
 
   const handleAddForYear = (targetYear) => {
     const tObj = tahunList.find(t => parseInt(t.tahun) === targetYear);
     if (!tObj) {
-      alert(`Tahun Akademik ${targetYear} belum terdaftar di Master Data Tahun. Silakan tambah tahun tersebut terlebih dahulu.`);
+      showError(`Tahun Akademik ${targetYear} belum terdaftar di Master Data Tahun. Silakan tambah tahun tersebut terlebih dahulu.`);
       return;
     }
     setFormData({
@@ -326,7 +327,8 @@ export default function DataMahasiswaPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus data ini?')) return;
+    const isConfirmed = await showConfirm('Apakah Anda yakin ingin menghapus data ini?', 'Ya, Hapus');
+    if (!isConfirmed) return;
 
     const token = localStorage.getItem('token');
     const userRole = (localStorage.getItem('userRole') || 'pmb').toLowerCase();
@@ -342,12 +344,12 @@ export default function DataMahasiswaPage() {
         body: JSON.stringify({ id_2a1: id, user_id: 1 })
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       fetchData();
       fetchTrashData();
     } catch (err) {
       console.error('Error deleting data:', err);
-      alert('Gagal menghapus data');
+      showError('Gagal menghapus data');
     }
   };
 
@@ -362,17 +364,19 @@ export default function DataMahasiswaPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+      if (result.success !== false) showSuccess(result.message); else showError(result.message);
       fetchData();
       fetchTrashData();
     } catch (err) {
       console.error('Error restoring data:', err);
+      showError('Gagal mengembalikan data');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('Peringatan: Data akan dihapus PERMANEN dari database. Lanjutkan?')) return;
-    
+    const isConfirmed = await showConfirm('Peringatan: Data akan dihapus PERMANEN dari database. Lanjutkan?', 'Ya, Hapus Permanen');
+    if (!isConfirmed) return;
+
     const token = localStorage.getItem('token');
     const userRole = (localStorage.getItem('userRole') || 'pmb').toLowerCase();
     const endpoint = userRole === 'ala' ? 'ala' : 'pmb';
@@ -383,10 +387,28 @@ export default function DataMahasiswaPage() {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await res.json();
-      alert(result.message);
+
+      // Backend meminta konfirmasi ke-2 karena data ALA masih aktif
+      if (result.requiresConfirmation) {
+        const forceConfirmed = await showConfirm(result.message, 'Ya, Hapus Paksa');
+        if (!forceConfirmed) return;
+
+        // Panggil force-delete untuk hapus paksa
+        const resForce = await fetch(`http://localhost:5000/api/${endpoint}/2a1-data-mahasiswa/force-delete/${id}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const resultForce = await resForce.json();
+        if (resultForce.success) showSuccess(resultForce.message); else showError(resultForce.message);
+      } else if (result.success) {
+        showSuccess(result.message);
+      } else {
+        showError(result.message);
+      }
       fetchTrashData();
     } catch (err) {
       console.error('Error hard deleting data:', err);
+      showError('Gagal menghapus data permanen');
     }
   };
 
@@ -555,134 +577,150 @@ export default function DataMahasiswaPage() {
           <>
             {/* Form Section */}
             {showForm && (
-          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200 p-8 mb-8 animate-in slide-in-from-top-4 duration-500">
-            <h2 className="text-xl font-black text-slate-900 mb-6">{editingId ? 'Edit Data Mahasiswa' : 'Input Data Mahasiswa Baru'}</h2>
+          <div className="relative bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 p-8 mb-8 animate-in slide-in-from-top-4 duration-500 overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -z-10 translate-x-1/2 -translate-y-1/2"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl -z-10 -translate-x-1/2 translate-y-1/2"></div>
+            <h2 className="text-2xl font-black text-slate-900 mb-8 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
+                <Edit size={20} />
+              </div>
+              {editingId ? 'Edit Data Mahasiswa' : 'Input Data Mahasiswa Baru'}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-slate-600 mb-2">Program Studi</label>
-                    <select value={formData.id_prodi} onChange={(e) => setFormData({ ...formData, id_prodi: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" required>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Program Studi</label>
+                    <select value={formData.id_prodi} onChange={(e) => setFormData({ ...formData, id_prodi: e.target.value })} className="w-full px-5 py-3.5 bg-white/60 border border-slate-200/80 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition-all font-bold text-slate-800 appearance-none shadow-sm backdrop-blur-md" required>
                       <option value="">Pilih Prodi</option>
                       {prodiList.map(p => <option key={p.id_prodi} value={p.id_prodi}>{p.nama_prodi}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-600 mb-2">Tahun Akademik</label>
-                    <select value={formData.id_tahun} onChange={(e) => setFormData({ ...formData, id_tahun: e.target.value })} disabled={true} className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-2xl outline-none font-medium opacity-70 cursor-not-allowed appearance-none" required>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Tahun Akademik</label>
+                    <select value={formData.id_tahun} onChange={(e) => setFormData({ ...formData, id_tahun: e.target.value })} disabled={true} className="w-full px-5 py-3.5 bg-slate-100/60 border border-slate-200/80 rounded-2xl outline-none font-bold text-slate-500 opacity-80 cursor-not-allowed appearance-none shadow-sm backdrop-blur-md" required>
                       <option value="">Pilih Tahun</option>
                       {tahunList.map(t => <option key={t.id_tahun} value={t.id_tahun}>{t.tahun}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-600 mb-2">Daya Tampung</label>
-                    <input type="number" value={formData.daya_tampung} onChange={(e) => setFormData({ ...formData, daya_tampung: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Daya Tampung</label>
+                    <input type="number" value={formData.daya_tampung} onChange={(e) => setFormData({ ...formData, daya_tampung: e.target.value })} className="w-full px-5 py-3.5 bg-white/60 border border-slate-200/80 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition-all font-bold text-slate-800 shadow-sm backdrop-blur-md placeholder:text-slate-300" placeholder="0" />
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-black text-slate-900 mb-4">Jumlah Calon Mahasiswa</h3>
+                <div className="bg-blue-50/50 rounded-3xl p-6 border border-blue-100/50">
+                  <h3 className="text-lg font-black text-blue-900 mb-6 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center">1</span>
+                    Jumlah Calon Mahasiswa
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-bold text-slate-600 mb-2">Pendaftar</label>
-                      <input type="number" value={formData.pendaftar} onChange={(e) => setFormData({ ...formData, pendaftar: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Pendaftar</label>
+                      <input type="number" value={formData.pendaftar} onChange={(e) => setFormData({ ...formData, pendaftar: e.target.value })} className="w-full px-5 py-3.5 bg-white border border-blue-200/60 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition-all font-bold text-slate-800 shadow-sm placeholder:text-slate-300" placeholder="0" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-600 mb-2">Afirmasi</label>
-                      <input type="number" value={formData.pendaftar_afirmasi} onChange={(e) => setFormData({ ...formData, pendaftar_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Afirmasi</label>
+                      <input type="number" value={formData.pendaftar_afirmasi} onChange={(e) => setFormData({ ...formData, pendaftar_afirmasi: e.target.value })} className="w-full px-5 py-3.5 bg-white border border-blue-200/60 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition-all font-bold text-slate-800 shadow-sm placeholder:text-slate-300" placeholder="0" />
                     </div>
                     <div>
-                      <label className="block text-sm font-bold text-slate-600 mb-2">Kebutuhan Khusus</label>
-                      <input type="number" value={formData.pendaftar_khusus} onChange={(e) => setFormData({ ...formData, pendaftar_khusus: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-black text-slate-900 mb-4">Jumlah Mahasiswa Baru</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <h4 className="text-md font-bold text-blue-600 mb-3">Reguler</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Diterima</label>
-                          <input type="number" value={formData.maba_reg_diterima} onChange={(e) => setFormData({ ...formData, maba_reg_diterima: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Afirmasi</label>
-                          <input type="number" value={formData.maba_reg_afirmasi} onChange={(e) => setFormData({ ...formData, maba_reg_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Kebutuhan Khusus</label>
-                          <input type="number" value={formData.maba_reg_khusus} onChange={(e) => setFormData({ ...formData, maba_reg_khusus: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-md font-bold text-blue-600 mb-3">RPL</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Diterima</label>
-                          <input type="number" value={formData.maba_rpl_diterima} onChange={(e) => setFormData({ ...formData, maba_rpl_diterima: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Afirmasi</label>
-                          <input type="number" value={formData.maba_rpl_afirmasi} onChange={(e) => setFormData({ ...formData, maba_rpl_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Kebutuhan Khusus</label>
-                          <input type="number" value={formData.maba_rpl_khusus} onChange={(e) => setFormData({ ...formData, maba_rpl_khusus: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none" placeholder="0" />
-                        </div>
-                      </div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Kebutuhan Khusus</label>
+                      <input type="number" value={formData.pendaftar_khusus} onChange={(e) => setFormData({ ...formData, pendaftar_khusus: e.target.value })} className="w-full px-5 py-3.5 bg-white border border-blue-200/60 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-2xl outline-none transition-all font-bold text-slate-800 shadow-sm placeholder:text-slate-300" placeholder="0" />
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-black text-slate-900 mb-4">Jumlah Mahasiswa Aktif</h3>
+                <div className="bg-indigo-50/50 rounded-3xl p-6 border border-indigo-100/50">
+                  <h3 className="text-lg font-black text-indigo-900 mb-6 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">2</span>
+                    Jumlah Mahasiswa Baru
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div>
-                      <h4 className="text-md font-bold text-emerald-600 mb-3">Reguler</h4>
+                    <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm">
+                      <h4 className="text-sm font-black text-indigo-600 mb-4 uppercase tracking-widest border-b border-indigo-100 pb-2">Reguler</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Diterima</label>
-                          <input type="number" value={formData.aktif_reg_diterima} onChange={(e) => setFormData({ ...formData, aktif_reg_diterima: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-emerald-500 focus:bg-white rounded-2xl outline-none transition font-medium" placeholder="0" />
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Diterima</label>
+                          <input type="number" value={formData.maba_reg_diterima} onChange={(e) => setFormData({ ...formData, maba_reg_diterima: e.target.value })} className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Afirmasi</label>
-                          <input type="number" value={formData.aktif_reg_afirmasi} onChange={(e) => setFormData({ ...formData, aktif_reg_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-emerald-500 focus:bg-white rounded-2xl outline-none transition font-medium" placeholder="0" />
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Afirmasi</label>
+                          <input type="number" value={formData.maba_reg_afirmasi} onChange={(e) => setFormData({ ...formData, maba_reg_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Kebutuhan Khusus</label>
-                          <input type="number" value={formData.aktif_reg_khusus} onChange={(e) => setFormData({ ...formData, aktif_reg_khusus: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-emerald-500 focus:bg-white rounded-2xl outline-none transition font-medium" placeholder="0" />
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Keb. Khusus</label>
+                          <input type="number" value={formData.maba_reg_khusus} onChange={(e) => setFormData({ ...formData, maba_reg_khusus: e.target.value })} className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
                         </div>
                       </div>
                     </div>
-                    <div>
-                      <h4 className="text-md font-bold text-emerald-600 mb-3">RPL</h4>
+                    <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm">
+                      <h4 className="text-sm font-black text-indigo-600 mb-4 uppercase tracking-widest border-b border-indigo-100 pb-2">RPL</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Diterima</label>
-                          <input type="number" value={formData.aktif_rpl_diterima} onChange={(e) => setFormData({ ...formData, aktif_rpl_diterima: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-emerald-500 focus:bg-white rounded-2xl outline-none transition font-medium" placeholder="0" />
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Diterima</label>
+                          <input type="number" value={formData.maba_rpl_diterima} onChange={(e) => setFormData({ ...formData, maba_rpl_diterima: e.target.value })} className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Afirmasi</label>
-                          <input type="number" value={formData.aktif_rpl_afirmasi} onChange={(e) => setFormData({ ...formData, aktif_rpl_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-emerald-500 focus:bg-white rounded-2xl outline-none transition font-medium" placeholder="0" />
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Afirmasi</label>
+                          <input type="number" value={formData.maba_rpl_afirmasi} onChange={(e) => setFormData({ ...formData, maba_rpl_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-600 mb-2">Kebutuhan Khusus</label>
-                          <input type="number" value={formData.aktif_rpl_khusus} onChange={(e) => setFormData({ ...formData, aktif_rpl_khusus: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border-transparent border-2 focus:border-emerald-500 focus:bg-white rounded-2xl outline-none transition font-medium" placeholder="0" />
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Keb. Khusus</label>
+                          <input type="number" value={formData.maba_rpl_khusus} onChange={(e) => setFormData({ ...formData, maba_rpl_khusus: e.target.value })} className="w-full px-4 py-3 bg-indigo-50/30 border border-indigo-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100/50">
+                  <h3 className="text-lg font-black text-emerald-900 mb-6 flex items-center gap-2">
+                    <span className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">3</span>
+                    Jumlah Mahasiswa Aktif
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm">
+                      <h4 className="text-sm font-black text-emerald-600 mb-4 uppercase tracking-widest border-b border-emerald-100 pb-2">Reguler</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Diterima</label>
+                          <input type="number" value={formData.aktif_reg_diterima} onChange={(e) => setFormData({ ...formData, aktif_reg_diterima: e.target.value })} className="w-full px-4 py-3 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Afirmasi</label>
+                          <input type="number" value={formData.aktif_reg_afirmasi} onChange={(e) => setFormData({ ...formData, aktif_reg_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Keb. Khusus</label>
+                          <input type="number" value={formData.aktif_reg_khusus} onChange={(e) => setFormData({ ...formData, aktif_reg_khusus: e.target.value })} className="w-full px-4 py-3 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm">
+                      <h4 className="text-sm font-black text-emerald-600 mb-4 uppercase tracking-widest border-b border-emerald-100 pb-2">RPL</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Diterima</label>
+                          <input type="number" value={formData.aktif_rpl_diterima} onChange={(e) => setFormData({ ...formData, aktif_rpl_diterima: e.target.value })} className="w-full px-4 py-3 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Afirmasi</label>
+                          <input type="number" value={formData.aktif_rpl_afirmasi} onChange={(e) => setFormData({ ...formData, aktif_rpl_afirmasi: e.target.value })} className="w-full px-4 py-3 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Keb. Khusus</label>
+                          <input type="number" value={formData.aktif_rpl_khusus} onChange={(e) => setFormData({ ...formData, aktif_rpl_khusus: e.target.value })} className="w-full px-4 py-3 bg-emerald-50/30 border border-emerald-100 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 rounded-xl outline-none transition-all font-bold text-slate-800 placeholder:text-slate-300" placeholder="0" />
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end gap-4 mt-8">
-                <button type="button" onClick={resetForm} className="px-6 py-3 bg-slate-50/80 text-slate-500 rounded-xl hover:bg-slate-200 transition font-medium">
+              <div className="flex justify-end gap-4 mt-10 pt-6 border-t border-slate-200/60">
+                <button type="button" onClick={resetForm} className="px-8 py-3.5 bg-slate-100/80 text-slate-500 rounded-2xl hover:bg-slate-200 transition-all font-bold">
                   Batal
                 </button>
-                <button type="submit" className="px-6 py-3 bg-blue-600 text-slate-900 rounded-xl hover:bg-violet-700 transition font-medium">
+                <button type="submit" className="px-10 py-3.5 bg-gradient-to-r from-blue-600 to-violet-600 text-white rounded-2xl hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transition-all font-black">
                   {editingId ? 'Update Data' : 'Simpan Data'}
                 </button>
               </div>
@@ -772,21 +810,21 @@ export default function DataMahasiswaPage() {
                           <tr key={item.id_2a1} className="hover:bg-violet-50/40 even:bg-slate-50/40 transition-colors group border-b border-slate-200 bg-white">
                             <td className="px-8 py-4 border-r border-slate-200 text-center text-slate-900">{tsLabel} <span className="text-[9px] text-slate-500 block font-normal">({item.tahun})</span></td>
                             <td className="px-8 py-4 border-r border-slate-200 text-center text-blue-600">{item.daya_tampung || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50">{item.pendaftar || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50">{item.pendaftar_afirmasi || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50">{item.pendaftar_khusus || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30">{item.maba_reg_diterima || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30">{item.maba_reg_afirmasi || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30">{item.maba_reg_khusus || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30">{item.maba_rpl_diterima || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30">{item.maba_rpl_afirmasi || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30">{item.maba_rpl_khusus || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50">{item.aktif_reg_diterima || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50">{item.aktif_reg_afirmasi || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50">{item.aktif_reg_khusus || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50">{item.aktif_rpl_diterima || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50">{item.aktif_rpl_afirmasi || 0}</td>
-                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50">{item.aktif_rpl_khusus || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50 text-slate-800 font-bold">{item.pendaftar || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50 text-slate-800 font-bold">{item.pendaftar_afirmasi || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50 text-slate-800 font-bold">{item.pendaftar_khusus || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30 text-slate-800 font-semibold">{item.maba_reg_diterima || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30 text-slate-800 font-semibold">{item.maba_reg_afirmasi || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30 text-slate-800 font-semibold">{item.maba_reg_khusus || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30 text-slate-800 font-semibold">{item.maba_rpl_diterima || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30 text-slate-800 font-semibold">{item.maba_rpl_afirmasi || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-blue-50/30 text-slate-800 font-semibold">{item.maba_rpl_khusus || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50 text-slate-800 font-bold">{item.aktif_reg_diterima || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50 text-slate-800 font-bold">{item.aktif_reg_afirmasi || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50 text-slate-800 font-bold">{item.aktif_reg_khusus || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50 text-slate-800 font-bold">{item.aktif_rpl_diterima || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50 text-slate-800 font-bold">{item.aktif_rpl_afirmasi || 0}</td>
+                            <td className="px-8 py-4 border-r border-slate-200 text-center bg-emerald-50 text-slate-800 font-bold">{item.aktif_rpl_khusus || 0}</td>
                             <td className="px-8 py-4 border-r border-slate-200">
                               <div className="inline-flex items-center bg-white border border-slate-200 p-1.5 rounded-xl shadow-sm transition-all group-hover:border-blue-800 group-hover:shadow-md">
                                 <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition" title="Edit"><Edit size={17} /></button>
@@ -956,49 +994,49 @@ export default function DataMahasiswaPage() {
 
         {/* Trash Section */}
         {viewMode === 'trash' && (
-          <div className="bg-red-50 rounded-2xl p-8 border border-red-900/50 shadow-sm animate-in slide-in-from-bottom-4 duration-500">
+          <div className="bg-red-50/50 backdrop-blur-xl rounded-3xl p-8 border border-red-200/50 shadow-sm animate-in slide-in-from-bottom-4 duration-500">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-xl flex items-center justify-center">
+              <div className="w-12 h-12 bg-red-100 text-red-600 rounded-2xl flex items-center justify-center shadow-inner">
                 <Trash2 size={24} />
               </div>
               <div>
-                <h3 className="text-xl font-black text-red-400 tracking-tight">Tempat Sampah</h3>
-                <p className="text-sm text-red-500 font-medium">Data yang dihapus sementara dapat dikembalikan atau dihapus permanen.</p>
+                <h3 className="text-xl font-black text-red-600 tracking-tight">Tempat Sampah</h3>
+                <p className="text-sm text-red-500/80 font-medium">Data yang dihapus sementara dapat dikembalikan atau dihapus permanen.</p>
               </div>
             </div>
             
-            <div className="bg-white rounded-2xl shadow-sm shadow-red-100/50 overflow-hidden border border-red-900/50">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden border border-red-100">
               <div className="overflow-x-auto custom-scrollbar">
                 <table className="w-full text-sm text-left">
-                  <thead className="bg-slate-50/80 border-b border-red-900/50">
+                  <thead className="bg-red-50/50 border-b border-red-100">
                     <tr className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
-                      <th className="px-6 py-4 border-r border-white/20">Tahun Akademik</th>
-                      <th className="px-6 py-4 border-r border-white/20">Waktu Penghapusan</th>
-                      <th className="px-6 py-4 text-center border-r border-white/20">Aksi</th>
+                      <th className="px-6 py-4 border-r border-red-100">Tahun Akademik</th>
+                      <th className="px-6 py-4 border-r border-red-100">Waktu Penghapusan</th>
+                      <th className="px-6 py-4 text-center">Aksi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
+                  <tbody className="divide-y divide-red-50">
                     {trashData.length === 0 ? (
                       <tr>
                         <td colSpan="3" className="px-6 py-12 text-center">
-                          <p className="text-sm font-bold text-slate-500">Tidak ada data di tempat sampah</p>
+                          <p className="text-sm font-bold text-slate-400">Tidak ada data di tempat sampah</p>
                         </td>
                       </tr>
                     ) : (
                       trashData.map((item) => (
-                        <tr key={item.id_2a1} className="hover:bg-red-950/30 transition-colors">
-                          <td className="px-6 py-4 text-slate-900 border-r border-slate-200">{item.tahun}</td>
-                          <td className="px-6 py-4 text-slate-500 font-medium border-r border-slate-200">{new Date().toLocaleDateString('id-ID')}</td>
-                          <td className="px-6 py-4 flex items-center justify-center gap-3 border-r border-slate-200">
+                        <tr key={item.id_2a1} className="hover:bg-red-50/50 transition-colors">
+                          <td className="px-6 py-4 text-slate-900 border-r border-red-50 font-medium">{item.tahun}</td>
+                          <td className="px-6 py-4 text-slate-500 border-r border-red-50">{new Date().toLocaleDateString('id-ID')}</td>
+                          <td className="px-6 py-4 flex items-center justify-center gap-3">
                             <button
                               onClick={() => handleRestore(item.id_2a1)}
-                              className="px-4 py-2 bg-blue-600 text-slate-900 rounded-xl font-bold text-xs hover:bg-violet-700 transition uppercase shadow-lg shadow-violet-200/50"
+                              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-bold text-[10px] hover:shadow-lg hover:shadow-blue-500/30 transition-all uppercase tracking-wider"
                             >
                               Restore
                             </button>
                             <button
                               onClick={() => handleHardDelete(item.id_2a1)}
-                              className="px-4 py-2 bg-red-50 text-red-600 border border-red-900/50 rounded-xl font-bold text-xs hover:bg-red-600 hover:text-slate-900 transition uppercase"
+                              className="px-4 py-2 bg-white text-red-500 border border-red-200 rounded-xl font-bold text-[10px] hover:bg-red-50 hover:text-red-600 transition-all uppercase tracking-wider shadow-sm"
                             >
                               Hard Delete
                             </button>

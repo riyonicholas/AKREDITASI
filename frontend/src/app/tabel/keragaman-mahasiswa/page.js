@@ -636,8 +636,8 @@ export default function KeragamanAsalPage() {
                           
                           {/* Helper to render rows */}
                           {(() => {
-                            const renderParent = (label, ts2, ts1, ts, link) => (
-                              <tr className="bg-white/50 font-bold border-y border-slate-200">
+                            const renderParent = (key, label, ts2, ts1, ts, link) => (
+                              <tr key={key} className="bg-white/50 font-bold border-y border-slate-200">
                                 <td className="px-6 py-3 text-slate-800 uppercase text-[10px] tracking-tight border-r border-slate-200">{label}</td>
                                 <td className="text-center px-4 py-3 text-slate-500 border-r border-slate-200 text-xs">{ts2}</td>
                                 <td className="text-center px-4 py-3 text-slate-500 border-r border-slate-200 text-xs">{ts1}</td>
@@ -648,8 +648,8 @@ export default function KeragamanAsalPage() {
                               </tr>
                             );
 
-                            const renderChild = (label, ts2, ts1, ts) => (
-                              <tr className="hover:bg-slate-50/80 transition-colors">
+                            const renderChild = (key, label, ts2, ts1, ts) => (
+                              <tr key={key} className="hover:bg-slate-50/80 transition-colors">
                                 <td className="px-10 py-2.5 text-slate-500 font-bold text-[10px] italic border-r border-slate-200/50 flex items-center gap-2">
                                   <div className="w-1.5 h-1.5 rounded-full bg-gray-500"></div> {label}
                                 </td>
@@ -663,45 +663,45 @@ export default function KeragamanAsalPage() {
                             const rows = [];
                             
                             // 1. Lokal
-                            rows.push(renderParent('Kota/Kab sama dengan PS', rTS2 ? rTS2.raw.lokal.jml : 0, rTS1 ? rTS1.raw.lokal.jml : 0, getSum('lokal'), formData.lokal.link));
+                            rows.push(renderParent('parent-lokal', 'Kota/Kab sama dengan PS', rTS2 ? rTS2.raw.lokal.jml : 0, rTS1 ? rTS1.raw.lokal.jml : 0, getSum('lokal'), formData.lokal.link));
 
                             // 2. Regional
                             const regTS2 = rTS2 ? (parseInt(rTS2.raw.regional.jml)||0) + (parseInt(rTS2.raw.nasional.jml)||0) + (parseInt(rTS2.raw.internasional.jml)||0) : 0;
                             const regTS1 = rTS1 ? (parseInt(rTS1.raw.regional.jml)||0) + (parseInt(rTS1.raw.nasional.jml)||0) + (parseInt(rTS1.raw.internasional.jml)||0) : 0;
                             const regTS = getSum('regional') + getSum('nasional') + getSum('internasional');
-                            rows.push(renderParent('Kota/Kabupaten Lain', regTS2, regTS1, regTS, formData.regional.link));
-                            getUniqueKeys('regional').forEach(key => {
-                                rows.push(renderChild(key, getValueForKey(rTS2, 'regional', key), getValueForKey(rTS1, 'regional', key), formData.regional.rows.find(x => x.ket.trim() === key)?.jml || 0));
+                            rows.push(renderParent('parent-regional', 'Kota/Kabupaten Lain', regTS2, regTS1, regTS, formData.regional.link));
+                            getUniqueKeys('regional').forEach((key, i) => {
+                                rows.push(renderChild(`child-regional-${i}-${key}`, key, getValueForKey(rTS2, 'regional', key), getValueForKey(rTS1, 'regional', key), formData.regional.rows.find(x => x.ket.trim() === key)?.jml || 0));
                             });
 
                             // 3. Nasional
                             const nasTS2 = rTS2 ? (parseInt(rTS2.raw.nasional.jml)||0) + (parseInt(rTS2.raw.internasional.jml)||0) : 0;
                             const nasTS1 = rTS1 ? (parseInt(rTS1.raw.nasional.jml)||0) + (parseInt(rTS1.raw.internasional.jml)||0) : 0;
                             const nasTS = getSum('nasional') + getSum('internasional');
-                            rows.push(renderParent('Provinsi Lain', nasTS2, nasTS1, nasTS, formData.nasional.link));
-                            getUniqueKeys('nasional').forEach(key => {
-                                rows.push(renderChild(key, getValueForKey(rTS2, 'nasional', key), getValueForKey(rTS1, 'nasional', key), formData.nasional.rows.find(x => x.ket.trim() === key)?.jml || 0));
+                            rows.push(renderParent('parent-nasional', 'Provinsi Lain', nasTS2, nasTS1, nasTS, formData.nasional.link));
+                            getUniqueKeys('nasional').forEach((key, i) => {
+                                rows.push(renderChild(`child-nasional-${i}-${key}`, key, getValueForKey(rTS2, 'nasional', key), getValueForKey(rTS1, 'nasional', key), formData.nasional.rows.find(x => x.ket.trim() === key)?.jml || 0));
                             });
 
                             // 4. Internasional
                             const intTS2 = rTS2 ? rTS2.raw.internasional.jml : 0;
                             const intTS1 = rTS1 ? rTS1.raw.internasional.jml : 0;
                             const intTS = getSum('internasional');
-                            rows.push(renderParent('Negara Lain', intTS2, intTS1, intTS, formData.internasional.link));
-                            getUniqueKeys('internasional').forEach(key => {
-                                rows.push(renderChild(key, getValueForKey(rTS2, 'internasional', key), getValueForKey(rTS1, 'internasional', key), formData.internasional.rows.find(x => x.ket.trim() === key)?.jml || 0));
+                            rows.push(renderParent('parent-internasional', 'Negara Lain', intTS2, intTS1, intTS, formData.internasional.link));
+                            getUniqueKeys('internasional').forEach((key, i) => {
+                                rows.push(renderChild(`child-internasional-${i}-${key}`, key, getValueForKey(rTS2, 'internasional', key), getValueForKey(rTS1, 'internasional', key), formData.internasional.rows.find(x => x.ket.trim() === key)?.jml || 0));
                             });
 
                             // 5. Afirmasi
-                            rows.push(renderParent('Afirmasi', rTS2 ? rTS2.raw.afirmasi.jml : 0, rTS1 ? rTS1.raw.afirmasi.jml : 0, getSum('afirmasi'), formData.afirmasi.link));
-                            getUniqueKeys('afirmasi').forEach(key => {
-                                rows.push(renderChild(key, getValueForKey(rTS2, 'afirmasi', key), getValueForKey(rTS1, 'afirmasi', key), formData.afirmasi.rows.find(x => x.ket.trim() === key)?.jml || 0));
+                            rows.push(renderParent('parent-afirmasi', 'Afirmasi', rTS2 ? rTS2.raw.afirmasi.jml : 0, rTS1 ? rTS1.raw.afirmasi.jml : 0, getSum('afirmasi'), formData.afirmasi.link));
+                            getUniqueKeys('afirmasi').forEach((key, i) => {
+                                rows.push(renderChild(`child-afirmasi-${i}-${key}`, key, getValueForKey(rTS2, 'afirmasi', key), getValueForKey(rTS1, 'afirmasi', key), formData.afirmasi.rows.find(x => x.ket.trim() === key)?.jml || 0));
                             });
 
                             // 6. Khusus
-                            rows.push(renderParent('Berkebutuhan Khusus', rTS2 ? rTS2.raw.khusus.jml : 0, rTS1 ? rTS1.raw.khusus.jml : 0, getSum('khusus'), formData.khusus.link));
-                            getUniqueKeys('khusus').forEach(key => {
-                                rows.push(renderChild(key, getValueForKey(rTS2, 'khusus', key), getValueForKey(rTS1, 'khusus', key), formData.khusus.rows.find(x => x.ket.trim() === key)?.jml || 0));
+                            rows.push(renderParent('parent-khusus', 'Berkebutuhan Khusus', rTS2 ? rTS2.raw.khusus.jml : 0, rTS1 ? rTS1.raw.khusus.jml : 0, getSum('khusus'), formData.khusus.link));
+                            getUniqueKeys('khusus').forEach((key, i) => {
+                                rows.push(renderChild(`child-khusus-${i}-${key}`, key, getValueForKey(rTS2, 'khusus', key), getValueForKey(rTS1, 'khusus', key), formData.khusus.rows.find(x => x.ket.trim() === key)?.jml || 0));
                             });
 
                             return <>{rows}</>;
