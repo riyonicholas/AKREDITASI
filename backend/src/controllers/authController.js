@@ -60,5 +60,32 @@ const login = async (req, res) => {
         res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 };
+const changePassword = async (req, res) => {
+    const { oldPassword, newPassword } = req.body;
+    const userId = req.user.id_user;
 
-module.exports = { login };
+    try {
+        const [rows] = await db.execute('SELECT password FROM users WHERE id_user = ?', [userId]);
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+        }
+
+        const user = rows[0];
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Password saat ini salah' });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await db.execute('UPDATE users SET password = ? WHERE id_user = ?', [hashedPassword, userId]);
+
+        res.json({ success: true, message: 'Password berhasil diubah' });
+    } catch (error) {
+        console.error("Change Password Error:", error.message);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
+    }
+};
+
+module.exports = { login, changePassword };

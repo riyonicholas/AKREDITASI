@@ -158,7 +158,7 @@ const TABEL_MENU_GROUPS = [
 // Definisi 12 kelompok menu tabel (menggunakan label persis seperti Navbar dan endpoint riil)
 const CHART_GROUPS = [
   {
-    label: "MASTER DATA", color: "#1e3a8a",
+    label: "MASTER DATA", color: "#3b82f6",
     items: [
       { endpoint: "master/pegawai", label: "Pegawai" },
       { endpoint: "master/dosen", label: "Dosen" },
@@ -168,7 +168,7 @@ const CHART_GROUPS = [
     ]
   },
   {
-    label: "UPPS", color: "#0ea5e9",
+    label: "UPPS", color: "#10b981",
     items: [
       { endpoint: "upps/1a1-pimpinan", label: "1.A.1 Pimpinan & Tupoksi" },
       { endpoint: "upps/1a4-beban", label: "1.A.4 Beban DTPR" },
@@ -177,20 +177,20 @@ const CHART_GROUPS = [
     ]
   },
   {
-    label: "KEUANGAN", color: "#34d399",
+    label: "KEUANGAN", color: "#f59e0b",
     items: [
       { endpoint: "keuangan/1a2-sumber-pendanaan", label: "1.A.2 Sumber Pendanaan" },
       { endpoint: "keuangan/1a3-penggunaan-dana", label: "1.A.3 Penggunaan Dana" },
     ]
   },
   {
-    label: "KEPEGAWAIAN", color: "#a78bfa",
+    label: "KEPEGAWAIAN", color: "#a855f7",
     items: [
       { endpoint: "kepegawaian/1a5-tendik", label: "1.A.5 Kualifikasi Tendik" },
     ]
   },
   {
-    label: "SARPRAS", color: "#f97316",
+    label: "SARPRAS", color: "#ef4444",
     items: [
       { endpoint: "sarpras/3a1-sarana-prasarana", label: "3.A.1 Sarpras Penelitian" },
       { endpoint: "sarpras/4a1-sarana-prasarana-pkm", label: "4.A.1 Sarpras PkM" },
@@ -198,7 +198,7 @@ const CHART_GROUPS = [
     ]
   },
   {
-    label: "TPM", color: "#ef4444",
+    label: "TPM", color: "#06b6d4",
     items: [
       { endpoint: "tpm/1b-spmi", label: "1.B Unit SPMI & SDM" },
       { endpoint: "tpm/1b-tpm", label: "1.B Data TPM" },
@@ -212,7 +212,7 @@ const CHART_GROUPS = [
     ]
   },
   {
-    label: "ALA", color: "#06b6d4",
+    label: "ALA", color: "#0ea5e9",
     items: [
       { endpoint: "ala/2a1-data-mahasiswa", label: "2.A.1 Data Mahasiswa" },
       { endpoint: "ala/2a3-kondisi-mahasiswa", label: "2.A.3 Kondisi Mahasiswa" },
@@ -262,7 +262,7 @@ export default function DashboardPage() {
   const [activeGroup, setActiveGroup] = useState(null); // State untuk detail chart
 
   // Saring menu & chart berdasarkan unit kerja (RBAC)
-  const userUnit = user?.unit ? user.unit.trim().toUpperCase() : "";
+  const userUnit = user?.unit ? user.unit.trim().toUpperCase() : "ADMIN";
 
   const filteredTabelMenuGroups = TABEL_MENU_GROUPS.filter(group => {
     const groupName = group.group.trim().toUpperCase();
@@ -297,10 +297,12 @@ export default function DashboardPage() {
     "sisfo/5-1-sistem-tata-kelola",
   ]);
 
-  const visibleMenus = showAll ? filteredTabelMenuGroups : filteredTabelMenuGroups.slice(0, 3);
+  const visibleMenus = showAll ? filteredTabelMenuGroups : filteredTabelMenuGroups.slice(0, 4);
 
   // State Kalender
   const [selectedDate, setSelectedDate] = useState(null);
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+  const [showYearDropdown, setShowYearDropdown] = useState(false);
 
   // Data Kalender Real-time
   const todayDateObj = new Date();
@@ -308,6 +310,22 @@ export default function DashboardPage() {
   const [currentYear, setCurrentYear] = useState(todayDateObj.getFullYear());
   const todayDate = todayDateObj.getDate();
   const isCurrentMonthYear = currentMonth === todayDateObj.getMonth() && currentYear === todayDateObj.getFullYear();
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const fullMonthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+  const years = Array.from({ length: 11 }, (_, i) => todayDateObj.getFullYear() - 5 + i);
+
+  const handleMonthChange = (val) => {
+    setCurrentMonth(val);
+    setSelectedDate(null);
+    setShowMonthDropdown(false);
+  };
+
+  const handleYearChange = (val) => {
+    setCurrentYear(val);
+    setSelectedDate(null);
+    setShowYearDropdown(false);
+  };
 
   const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
   const getFirstDayOfMonth = (y, m) => {
@@ -394,60 +412,33 @@ export default function DashboardPage() {
     }, []);
 
     const segments = [...displayData].filter(seg => seg.count > 0);
-    const RADIUS = 95; // Radius utama
-    const STROKE = 28; // Ketebalan chart
+    const RADIUS = 80; // Radius utama
+    const STROKE = 22; // Ketebalan chart
     const CIRC = 2 * Math.PI * RADIUS;
 
     let currentOffset = 0;
 
     return (
-      <svg width="260" height="260" viewBox="0 0 260 260" className="drop-shadow-sm">
-        <g transform="rotate(-90 130 130)">
-          {/* Background Track (Satu ring utuh) */}
-          <circle
-            cx="130" cy="130" r={RADIUS}
-            fill="none"
-            stroke="#f1f5f9"
-            strokeWidth={STROKE}
-          />
-
-          {/* Segments (Membentuk satu ring penuh) */}
+      <svg width="200" height="200" viewBox="0 0 200 200" className="drop-shadow-sm">
+        <g transform="rotate(-90 100 100)">
+          <circle cx="100" cy="100" r={RADIUS} fill="none" stroke="#f1f5f9" strokeWidth={STROKE} />
           {segments.map((seg, i) => {
             const pct = totalData > 0 ? (seg.count / totalData) : 0;
             const dash = pct * CIRC;
-            const gap = segments.length > 1 ? 3 : 0; // Jarak antar segmen
+            const gap = segments.length > 1 ? 2 : 0;
             const visibleDash = Math.max(0, dash - gap);
-
-            // Animasi masuk menggunakan dasharray
             const strokeDasharray = `${isLoaded ? visibleDash : 0} ${CIRC}`;
             const strokeDashoffset = -currentOffset;
-
             currentOffset += dash;
-
             return (
-              <circle
-                key={seg.label}
-                cx="130" cy="130" r={RADIUS}
-                fill="none"
-                stroke={seg.color}
-                strokeWidth={STROKE}
-                strokeDasharray={strokeDasharray}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="butt"
-                className="transition-all duration-1000 ease-out hover:opacity-80 hover:stroke-[32px] cursor-pointer"
-                style={{
-                  transitionDelay: `${i * 0.05}s`
-                }}
-              />
+              <circle key={seg.label} cx="100" cy="100" r={RADIUS} fill="none" stroke={seg.color} strokeWidth={STROKE} strokeDasharray={strokeDasharray} strokeDashoffset={strokeDashoffset} strokeLinecap="butt" className="transition-all duration-1000 ease-out hover:opacity-80 cursor-pointer" style={{ transitionDelay: `${i * 0.05}s` }} />
             );
           })}
         </g>
-
-        {/* Teks di tengah */}
-        <text x="130" y="125" textAnchor="middle" fontSize="48" fontWeight="900" fill="#0f172a" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <text x="100" y="96" textAnchor="middle" fontSize="36" fontWeight="900" fill="#0f172a" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {totalData.toLocaleString()}
         </text>
-        <text x="130" y="152" textAnchor="middle" fontSize={activeGroup ? "11" : "13"} fontWeight="700" fill="#94a3b8" className="uppercase tracking-[0.15em]">
+        <text x="100" y="118" textAnchor="middle" fontSize="9" fontWeight="800" fill="#94a3b8" letterSpacing="0.1em" className="uppercase">
           {chartTitle}
         </text>
       </svg>
@@ -461,207 +452,167 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="min-h-full flex flex-col bg-[#f8fafc] p-5 md:p-10" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
-      {/* ─── Header ─── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-5 md:gap-0 mb-8 md:mb-10">
-        <div>
-          <h1 className="text-[1.5rem] md:text-[1.8rem] font-bold text-[#0f172a] mb-1">
+    <div className="min-h-full flex flex-col bg-[#f8fafc] p-5 md:p-8" style={{ fontFamily: "var(--font-montserrat), sans-serif" }}>
+
+      {/* ─── Header Card ─── */}
+      <div className="bg-white rounded-[20px] border border-slate-100 shadow-sm p-4 md:p-6 mb-6 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="w-full md:w-auto text-center md:text-left">
+          <h1 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-wide mb-1 flex items-center justify-center md:justify-start gap-2">
             Hello, {name}! 👋
           </h1>
-          <p className="text-[0.8rem] font-medium text-[#38bdf8] m-0 tracking-wide">
+          <p className="text-xs md:text-sm text-slate-500 m-0">
             Selamat datang di Panel Akreditasi STIKOM PGRI Banyuwangi
           </p>
         </div>
 
-        <div className="hidden md:flex items-center gap-3 self-end md:self-auto">
-          {/* Bell */}
-          <button className="w-11 h-11 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-[#0f172a] hover:bg-[#e0f2fe] hover:border-[#bae6fd] transition-all duration-300 cursor-pointer shadow-sm group relative outline-none">
-            <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white animate-pulse" />
-          </button>
-
-          {/* User Pill */}
-          <button
-            onClick={() => router.push("/profile")}
-            className="h-11 bg-white hover:bg-slate-50 rounded-full flex items-center pl-[6px] pr-5 gap-3 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 border border-slate-100 hover:border-[#bae6fd] outline-none cursor-pointer group"
-          >
-            <div className="w-8 h-8 rounded-full bg-[#facc15] flex items-center justify-center font-black text-[#0f172a] text-[0.75rem] shadow-sm group-hover:rotate-12 transition-transform">
-              {name[0]?.toUpperCase()}
-            </div>
-            <div className="flex flex-col items-start leading-none">
-              <span className="font-black text-[0.8rem] text-[#0f172a] tracking-wide">{name}</span>
-              <span className="text-[0.6rem] text-[#38bdf8] font-bold uppercase tracking-widest mt-0.5">
-                {user?.unit || "Administrator"}
-              </span>
-            </div>
-          </button>
-
+        <div className="flex items-center justify-center md:justify-end gap-4 w-full md:w-auto">
           {/* Logout */}
           <button
             onClick={handleLogout}
-            className="w-11 h-11 bg-white border border-slate-100 rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 hover:border-red-100 transition-all duration-300 cursor-pointer shadow-sm group outline-none"
-            title="Keluar Sistem"
+            className="flex items-center gap-2 px-5 py-2.5 bg-red-50 hover:bg-red-100 text-red-500 hover:text-red-600 border border-red-100/50 rounded-full text-sm font-bold transition-all outline-none cursor-pointer shadow-sm"
           >
-            <svg className="w-5 h-5 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+            <span className="hidden sm:block">Logout</span>
+          </button>
+
+          {/* Bell */}
+          <button className="w-10 h-10 shrink-0 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:text-[#0f172a] hover:bg-slate-50 transition-colors relative cursor-pointer outline-none shadow-sm">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
+            <span className="absolute top-2.5 right-2.5 w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+          </button>
+
+          {/* Profile */}
+          <button
+            onClick={() => router.push("/profile")}
+            className="flex items-center gap-3 cursor-pointer outline-none hover:bg-slate-50 p-1 pr-3 rounded-full transition-colors border border-transparent hover:border-slate-100"
+          >
+            <div className="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
+              {name[0]?.toUpperCase()}
+            </div>
+            <div className="flex flex-col items-start hidden sm:flex pr-2">
+              <span className="font-bold text-[13px] text-[#0f172a] leading-none">{name}</span>
+              <span className="text-[11px] text-blue-600 font-bold leading-none mt-1.5 tracking-wide">{user?.unit || "Super Admin"}</span>
+            </div>
           </button>
         </div>
       </div>
 
+      {/* ─── Main Content Row ─── */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-8">
 
-
-      {/* ─── Stat Cards Row 2 (Full Width Donut Chart) ─── */}
-      <div className="mb-5">
-        {/* Donut Chart Card (Light Mode Design) */}
-        <div className="w-full bg-white border-2 border-[#e2e8f0] rounded-2xl shadow-sm p-6 hover:border-[#bae6fd] transition-colors min-h-[220px] flex flex-col justify-between">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-4">
+        {/* Overview Data Akreditasi */}
+        <div className="flex-[2] bg-white rounded-[20px] border border-slate-100 shadow-sm p-6 md:p-8 flex flex-col">
+          <div className="flex justify-between items-start mb-6">
             <div>
-              <h3 className="text-[#0f172a] font-bold text-base m-0">
-                {activeGroup ? `Detail Data: ${activeGroup}` : "Overview Data Akreditasi"}
-              </h3>
-              <p className="text-[#64748b] text-xs font-medium mt-0.5">
-                {activeGroup ? "Klik tombol 'Kembali' untuk melihat semua kelompok" : "Distribusi jumlah data per kelompok"}
-              </p>
+              <h2 className="text-[1.2rem] font-black text-[#0f172a] m-0 tracking-wide">Overview Data Akreditasi</h2>
+              <p className="text-[0.8rem] text-slate-500 mt-1 m-0">Distribusi jumlah data per kelompok</p>
             </div>
-            {activeGroup ? (
-              <button
-                onClick={() => setActiveGroup(null)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                Kembali
-              </button>
-            ) : (
-              <div className="w-8 h-8 bg-[#f1f5f9] rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /><path strokeLinecap="round" strokeLinejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" /></svg>
-              </div>
-            )}
+            <button
+              onClick={() => setActiveGroup(null)}
+              className="text-slate-400 hover:text-blue-500 transition-colors outline-none cursor-pointer w-8 h-8 flex items-center justify-center rounded-lg hover:bg-blue-50"
+              title="Reset Overview"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+            </button>
           </div>
 
-          {/* Content */}
-          <div className="flex flex-col md:flex-row items-center md:items-start gap-5 mt-2">
-            {/* Donut */}
-            <div className="shrink-0 flex justify-center md:justify-center w-full md:w-auto md:min-w-[300px] border-r-0 md:border-r border-slate-100 pr-0 md:pr-5">
+          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-16 flex-1 w-full justify-center lg:justify-between lg:pl-8 lg:pr-6">
+            <div className="shrink-0 flex items-center justify-center relative w-[200px] h-[200px]">
               <DonutChart />
             </div>
 
-            {/* Legend Grid / Buttons */}
-            <div className="flex flex-col flex-1 w-full pl-0">
-              {/* Alert Text */}
-              <div className="mb-5 bg-gradient-to-r from-blue-50 to-[#f0f9ff] border border-blue-100 p-4 rounded-2xl flex items-start gap-3.5 shadow-sm">
-                <div className="text-blue-500 mt-0.5 shrink-0 bg-white p-1.5 rounded-full shadow-sm border border-blue-50">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                </div>
-                <p className="text-[0.75rem] md:text-sm text-slate-600 font-medium leading-relaxed m-0">
-                  <strong className="text-blue-800 font-bold tracking-wide block mb-0.5">Panduan Visual:</strong>
-                  Setiap warna merepresentasikan proporsi jumlah data riil dari masing-masing menu tabel. Anda dapat mengklik setiap item di bawah ini untuk melihat detail per-kategorinya secara terperinci.
-                </p>
-              </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-7 gap-x-6 lg:gap-x-10 w-full flex-1 md:w-auto">
+              {displayData.map((g) => (
+                <button
+                  key={g.label}
+                  onClick={() => !g.isSub && setActiveGroup(g.label)}
+                  className={`flex flex-col text-left transition-transform outline-none ${!g.isSub ? 'cursor-pointer hover:scale-105' : 'cursor-default'}`}
+                >
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: g.color }}></div>
+                    <span className="text-[0.65rem] font-bold text-slate-500 uppercase tracking-widest">{g.label}</span>
+                  </div>
+                  <span className="text-[1.2rem] font-black text-[#0f172a]">{g.count.toLocaleString()}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-3 gap-x-2">
-                {displayData.map((g) => (
+        {/* Calendar */}
+        <div className="flex-1 lg:max-w-[340px] bg-white rounded-[20px] border border-slate-100 shadow-sm p-6 md:p-8 flex flex-col items-center">
+          <div className="flex items-center justify-between w-full mb-8">
+            <div className="flex items-center gap-2.5">
+              <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+              <div className="flex items-center gap-1.5 text-[1.1rem] font-black text-[#0f172a] tracking-wide relative">
+                {/* Month Dropdown */}
+                <div className="relative">
                   <button
-                    key={g.label}
-                    onClick={() => !g.isSub && setActiveGroup(g.label)}
-                    className={`flex flex-col gap-0.5 p-2 rounded-lg border border-transparent transition-all text-left ${!g.isSub ? "hover:bg-slate-50 hover:border-slate-100 cursor-pointer" : "cursor-default"}`}
-                    title={!g.isSub ? "Klik untuk melihat detail tabel" : ""}
+                    onClick={() => { setShowMonthDropdown(!showMonthDropdown); setShowYearDropdown(false); }}
+                    className="hover:text-blue-600 transition-colors outline-none cursor-pointer px-1 flex items-center gap-1"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: g.color }} />
-                      <span className="text-[0.7rem] text-[#64748b] font-medium truncate">{g.label}</span>
-                    </div>
-                    <span className="text-[0.8rem] font-bold text-[#0f172a] ml-4">{g.count.toLocaleString()}</span>
+                    {fullMonthNames[currentMonth]}
+                    <svg className={`w-3.5 h-3.5 transition-transform ${showMonthDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                   </button>
-                ))}
+                  {showMonthDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowMonthDropdown(false)}></div>
+                      <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] border border-slate-100 py-2 w-36 max-h-56 overflow-y-auto z-20 flex flex-col font-medium">
+                        {fullMonthNames.map((m, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleMonthChange(i)}
+                            className={`px-4 py-2 text-sm text-left transition-colors outline-none ${currentMonth === i ? 'font-black text-blue-600 bg-blue-50/50' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Year Dropdown */}
+                <div className="relative">
+                  <button
+                    onClick={() => { setShowYearDropdown(!showYearDropdown); setShowMonthDropdown(false); }}
+                    className="hover:text-blue-600 transition-colors outline-none cursor-pointer px-1 flex items-center gap-1"
+                  >
+                    {currentYear}
+                    <svg className={`w-3.5 h-3.5 transition-transform ${showYearDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                  </button>
+                  {showYearDropdown && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowYearDropdown(false)}></div>
+                      <div className="absolute top-full mt-2 left-0 bg-white rounded-xl shadow-[0_8px_30px_-4px_rgba(0,0,0,0.12)] border border-slate-100 py-2 w-28 max-h-56 overflow-y-auto z-20 flex flex-col font-medium">
+                        {years.map(y => (
+                          <button
+                            key={y}
+                            onClick={() => handleYearChange(y)}
+                            className={`px-4 py-2 text-sm text-center transition-colors outline-none ${currentYear === y ? 'font-black text-blue-600 bg-blue-50/50' : 'text-slate-600 hover:bg-slate-50 hover:text-blue-600'}`}
+                          >
+                            {y}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Stat Cards Row 3 ─── */}
-      <div className="flex flex-col lg:flex-row gap-5 mb-8">
-        {/* Info Card (Premium Dark) */}
-        <div className="flex-[2] bg-[#0f172a] rounded-2xl shadow-xl p-6 lg:p-8 relative overflow-hidden group transition-transform hover:scale-[1.01] min-h-[220px] flex flex-col justify-center border border-slate-800/50">
-
-          {/* Decorative Grid Pattern */}
-          <div
-            className="absolute inset-0 opacity-20"
-            style={{
-              backgroundImage: 'linear-gradient(#334155 1px, transparent 1px), linear-gradient(90deg, #334155 1px, transparent 1px)',
-              backgroundSize: '24px 24px'
-            }}
-          />
-          {/* Glowing Orbs */}
-          <div className="absolute -right-20 -top-20 w-72 h-72 bg-[#38bdf8]/10 rounded-full blur-3xl transition-transform duration-700 group-hover:translate-x-5 group-hover:bg-[#38bdf8]/20" />
-          <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-[#facc15]/10 rounded-full blur-3xl transition-transform duration-700 group-hover:-translate-y-5 group-hover:bg-[#facc15]/20" />
-
-          <div className="flex justify-between items-start mb-6 relative z-10">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#facc15] to-[#eab308] rounded-2xl flex items-center justify-center text-[#0f172a] shadow-lg shadow-[#facc15]/20 rotate-3 group-hover:-rotate-3 transition-transform">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <span className="px-4 py-1.5 bg-[#1e293b]/80 backdrop-blur-sm text-[#facc15] border border-slate-700/50 text-[10px] font-black uppercase tracking-widest rounded-full shadow-sm">
-              Informasi Sistem
-            </span>
+            <span className="bg-emerald-100 text-emerald-600 text-[10px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider">JADWAL</span>
           </div>
 
-          <div className="relative z-10">
-            <h3 className="text-white font-black text-2xl lg:text-3xl leading-tight mb-3 tracking-wide">
-              FUNGSI WEB AKREDITASI
-            </h3>
-            <p className="text-slate-300 text-[13px] md:text-sm font-medium leading-relaxed max-w-xl">
-              Sistem ini dirancang khusus untuk mempermudah civitas akademika STIKOM PGRI dalam mengelola, memantau, dan melaporkan seluruh dokumen serta data pendukung akreditasi secara terpusat, <strong className="text-white">real-time</strong>, dan terintegrasi antar program studi.
-            </p>
-          </div>
-        </div>
-
-        {/* Calendar Card */}
-        <div className="flex-1 lg:max-w-md w-full bg-white border border-[#e0f2fe] rounded-2xl shadow-sm p-5 hover:shadow-md transition-shadow min-h-[220px] flex flex-col relative overflow-hidden">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-              <div className="flex items-center gap-1">
-                <select
-                  value={currentMonth}
-                  onChange={(e) => setCurrentMonth(Number(e.target.value))}
-                  className="bg-transparent text-[#0f172a] font-bold text-[14px] outline-none cursor-pointer hover:bg-slate-50 p-1 rounded-md transition-colors"
-                >
-                  {['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'].map((m, i) => (
-                    <option key={i} value={i}>{m}</option>
-                  ))}
-                </select>
-                <select
-                  value={currentYear}
-                  onChange={(e) => setCurrentYear(Number(e.target.value))}
-                  className="bg-transparent text-[#0f172a] font-bold text-[14px] outline-none cursor-pointer hover:bg-slate-50 p-1 rounded-md transition-colors"
-                >
-                  {[2024, 2025, 2026, 2027, 2028].map(y => (
-                    <option key={y} value={y}>{y}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <span className="text-[9px] font-black text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md uppercase tracking-wider border border-emerald-100">
-              Jadwal
-            </span>
-          </div>
-
-          <div className="grid grid-cols-7 gap-x-1 gap-y-1 text-center w-full mb-3">
-            {['Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb', 'Mn'].map((day, i) => (
-              <div key={i} className="text-[9px] font-black text-slate-400 uppercase">{day}</div>
+          <div className="grid grid-cols-7 gap-y-4 gap-x-3 text-center w-full">
+            {['Sn', 'Sl', 'Rb', 'Km', 'Jm', 'Sb', 'Mg'].map((day, i) => (
+              <div key={i} className="text-[10px] font-bold text-slate-400">{day}</div>
             ))}
-
             {/* Blank spaces before 1st date */}
             {[...Array(firstDay >= 0 ? firstDay : 0)].map((_, i) => (
               <div key={`empty-${i}`} className="w-full aspect-square"></div>
             ))}
-
             {/* Real Dates */}
             {[...Array(daysInMonth)].map((_, i) => {
               const date = i + 1;
@@ -670,35 +621,31 @@ export default function DashboardPage() {
               const event = isCurrentMonthYear ? calendarEvents[date.toString()] : null;
               const isHoliday = event?.type === 'holiday';
               const isEvent = event?.type === 'event';
-              const isSelected = selectedDate === date;
+              const isSelected = selectedDate === date || (!selectedDate && isToday);
 
               return (
                 <div
                   key={date}
-                  onClick={() => setSelectedDate(isSelected ? null : date)}
-                  className={`relative flex items-center justify-center w-full aspect-square text-[11px] rounded-lg font-bold transition-all cursor-pointer border border-transparent
-                    ${isToday && !isSelected ? 'bg-blue-600 text-white shadow-sm scale-105 z-10' : ''}
-                    ${isSelected ? 'ring-2 ring-emerald-500 bg-emerald-50 text-emerald-700 scale-105 z-10' : ''}
-                    ${!isToday && !isSelected ? 'hover:bg-slate-50 text-slate-700' : ''}
-                    ${isHoliday && !isToday && !isSelected ? '!text-red-500' : ''}
-                  `}
-                  title={event?.title || ''}
+                  onClick={() => setSelectedDate(date)}
+                  className={`relative flex items-center justify-center w-8 h-8 text-[12px] rounded-full font-bold mx-auto cursor-pointer transition-all
+                    ${isSelected ? 'bg-blue-600 text-white shadow-md' : 'text-[#0f172a] hover:bg-slate-100'}
+                    ${isHoliday && !isSelected ? '!text-red-500' : ''}`}
                 >
                   {date}
-                  {isEvent && <div className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isToday ? 'bg-white' : 'bg-emerald-500'}`}></div>}
-                  {isHoliday && <div className={`absolute bottom-0.5 w-1 h-1 rounded-full ${isToday ? 'bg-white' : 'bg-red-500'}`}></div>}
+                  {isEvent && <div className={`absolute -bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-500'}`}></div>}
+                  {isHoliday && <div className={`absolute -bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-red-500'}`}></div>}
                 </div>
               );
             })}
           </div>
 
           {/* Deskripsi Event Section */}
-          <div className="mt-auto pt-3 border-t border-slate-100 flex-1 flex flex-col justify-end">
+          <div className="mt-auto pt-4 border-t border-slate-100 flex-1 flex flex-col justify-end w-full">
             {(() => {
               const targetDate = selectedDate || (isCurrentMonthYear ? todayDate : null);
               if (!targetDate) {
                 return (
-                  <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center h-full text-center">
+                  <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center text-center min-h-[54px]">
                     <span className="text-[10px] font-medium text-slate-400">Pilih tanggal untuk melihat agenda</span>
                   </div>
                 );
@@ -708,10 +655,10 @@ export default function DashboardPage() {
 
               if (ev) {
                 const isHol = ev.type === 'holiday';
-                const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][currentMonth];
+                const monthName = fullMonthNames[currentMonth];
                 return (
-                  <div className={`p-2.5 rounded-xl border flex items-start gap-2 ${isHol ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
-                    <div className={`mt-0.5 w-2 h-2 rounded-full shrink-0 ${isHol ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
+                  <div className={`p-3 rounded-xl border flex items-start gap-2.5 min-h-[54px] ${isHol ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                    <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${isHol ? 'bg-red-500' : 'bg-emerald-500'}`}></div>
                     <div>
                       <p className={`text-[9px] font-black uppercase mb-0.5 ${isHol ? 'text-red-600' : 'text-emerald-700'}`}>
                         {targetDate} {monthName} • {isHol ? 'Tanggal Merah' : 'Agenda'}
@@ -723,7 +670,7 @@ export default function DashboardPage() {
               }
 
               return (
-                <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center h-full text-center">
+                <div className="p-3 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-center text-center min-h-[54px]">
                   <span className="text-[10px] font-medium text-slate-400">Tidak ada agenda pada tanggal {targetDate}</span>
                 </div>
               );
@@ -733,64 +680,45 @@ export default function DashboardPage() {
       </div>
 
       {/* ─── Akses Cepat Menu Tabel ─── */}
-      <div className="mb-10">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="w-1 h-6 bg-[#facc15] rounded-full"></div>
-          <h2 className="text-[1rem] font-black text-[#0f172a] tracking-wide uppercase m-0">Akses Cepat Menu Tabel</h2>
-          <span className="text-[0.65rem] font-bold text-[#94a3b8] bg-slate-100 px-2.5 py-1 rounded-full uppercase tracking-widest">
-            {filteredTabelMenuGroups.length} Menu
-          </span>
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-1.5 h-6 bg-blue-600 rounded-full"></div>
+          <h2 className="text-[1.2rem] font-black text-[#0f172a] m-0 tracking-wide">Akses Cepat Menu Tabel</h2>
+          <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">{filteredTabelMenuGroups.length} Menu</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-5">
-          {visibleMenus.map((menu) => (
-            <button
-              key={menu.group}
-              onClick={() => router.push(menu.href)}
-              className="group relative flex flex-col items-start gap-5 p-8 rounded-3xl border border-slate-100 bg-white hover:border-transparent hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left outline-none cursor-pointer overflow-hidden min-h-[180px]"
-            >
-              {/* Background accent on hover */}
-              <div
-                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl"
-                style={{ background: `${menu.color}` }}
-              />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {visibleMenus.map((menu) => {
+            const groupData = overviewData.find(g => g.label === menu.group);
+            const count = groupData ? groupData.count : 0;
 
-              {/* Icon */}
-              <div
-                className="relative z-10 w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110"
-                style={{ background: `${menu.color}18` }}
+            return (
+              <button
+                key={menu.group}
+                onClick={() => router.push(menu.href)}
+                className="bg-white border border-slate-100 rounded-[20px] p-6 hover:bg-blue-50 hover:border-blue-100 hover:shadow-[0_8px_30px_-4px_rgba(0,0,0,0.05)] transition-all text-left flex flex-col cursor-pointer outline-none min-h-[170px] group"
               >
-                <div className="transition-colors duration-300 scale-125" style={{ color: menu.accent }}>
-                  {menu.icon}
+                <div className="w-11 h-11 rounded-xl bg-blue-50 group-hover:bg-white flex items-center justify-center text-blue-500 mb-5 transition-all group-hover:scale-110 group-hover:shadow-sm">
+                  <div className="scale-110 text-blue-500">{menu.icon}</div>
                 </div>
-              </div>
-
-              {/* Text */}
-              <div className="relative z-10 flex flex-col gap-1.5 w-full">
-                <span className="text-[1rem] font-black text-[#0f172a] group-hover:text-white transition-colors duration-300 tracking-wide leading-tight">
-                  {menu.group}
-                </span>
-                <span className="text-[0.78rem] text-[#94a3b8] group-hover:text-white/60 transition-colors duration-300 leading-relaxed line-clamp-2">
-                  {menu.desc}
-                </span>
-              </div>
-
-              {/* Arrow */}
-              <div className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-1 group-hover:translate-x-0">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </div>
-            </button>
-          ))}
+                <h4 className="text-[14px] font-black text-[#0f172a] mb-1.5 tracking-wide group-hover:text-blue-900 transition-colors">{menu.group}</h4>
+                <p className="text-[12px] text-slate-500 leading-relaxed mb-6 flex-1 line-clamp-2 group-hover:text-blue-800/70 transition-colors">{menu.desc}</p>
+                <div className="flex items-center justify-between w-full mt-auto">
+                  <span className="text-[10px] font-black text-slate-600 bg-slate-50 group-hover:bg-white group-hover:text-blue-600 transition-colors px-2.5 py-1.5 rounded">
+                    {count} Data
+                  </span>
+                  <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                </div>
+              </button>
+            )
+          })}
         </div>
 
-        {/* Toggle Button */}
-        {filteredTabelMenuGroups.length > 3 && (
-          <div className="flex justify-center mt-5">
+        {filteredTabelMenuGroups.length > 4 && (
+          <div className="flex justify-center mt-8">
             <button
               onClick={() => setShowAll(v => !v)}
-              className="flex items-center gap-2.5 px-6 py-3 rounded-full border-2 border-[#0f172a]/10 text-[#0f172a] text-[0.85rem] font-bold hover:bg-[#0f172a] hover:text-white hover:border-[#0f172a] transition-all duration-300 cursor-pointer bg-white shadow-sm"
+              className="flex items-center gap-2.5 px-6 py-3 rounded-full border border-slate-200 text-[#0f172a] text-[13px] font-bold hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 cursor-pointer bg-white shadow-sm"
             >
               {showAll ? (
                 <>
@@ -800,14 +728,14 @@ export default function DashboardPage() {
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                  Tampilkan Semua ({filteredTabelMenuGroups.length} Menu)
+                  Tampilkan Semua
                 </>
               )}
             </button>
           </div>
         )}
       </div>
-    </div>
 
+    </div>
   );
 }

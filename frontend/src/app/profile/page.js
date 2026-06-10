@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { User, Mail, Shield, Key, Save, Camera, CheckCircle } from 'lucide-react';
+import { User, Mail, Shield, Key, Save, Camera, CheckCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [activeTab, setActiveTab] = useState('profil');
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -32,22 +32,47 @@ export default function ProfilePage() {
     }
   }, [user]);
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
-    // Simulasi request ke backend
-    setTimeout(() => {
-      setIsSaving(false);
-      setShowSuccess(true);
+    if (activeTab === 'keamanan') {
+      try {
+        const response = await fetch('http://localhost:5000/api/auth/change-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            oldPassword: formData.oldPassword,
+            newPassword: formData.newPassword
+          })
+        });
 
-      // Sembunyikan notifikasi setelah 3 detik
-      setTimeout(() => setShowSuccess(false), 3000);
+        const data = await response.json();
 
-      if (activeTab === 'keamanan') {
-        setFormData(prev => ({ ...prev, oldPassword: '', newPassword: '', confirmPassword: '' }));
+        if (response.ok) {
+          setShowSuccess(true);
+          setTimeout(() => setShowSuccess(false), 3000);
+          setFormData(prev => ({ ...prev, oldPassword: '', newPassword: '', confirmPassword: '' }));
+        } else {
+          alert(`Gagal: ${data.message}`);
+        }
+      } catch (error) {
+        console.error("Change Password Error:", error);
+        alert("Terjadi kesalahan saat menghubungi server.");
+      } finally {
+        setIsSaving(false);
       }
-    }, 1000);
+    } else {
+      // Profil personal tidak bisa diubah langsung, butuh Admin. Simulasi sukses.
+      setTimeout(() => {
+        setIsSaving(false);
+        setShowSuccess(true);
+        setTimeout(() => setShowSuccess(false), 3000);
+      }, 500);
+    }
   };
 
   const getInitial = (name) => {
