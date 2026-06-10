@@ -5,8 +5,7 @@ const Controller51 = {
     index: async (req, res) => {
         try {
             const data = await Model51.getAll();
-            const [units] = await db.execute("SELECT id_unit, nama_unit FROM unit_kerja ORDER BY nama_unit ASC");
-            res.status(200).json({ success: true, data, units });
+            res.status(200).json({ success: true, data });
         } catch (error) { res.status(500).json({ success: false, message: error.message }); }
     },
 
@@ -76,7 +75,7 @@ const Controller51 = {
             ];
             worksheet.getRow(1).font = { bold: true };
             data.forEach((r, idx) => {
-                worksheet.addRow({ no: idx + 1, jenis: r.jenis_tata_kelola, nama: r.nama_sistem, akses: r.akses, unit: r.nama_unit || '-', link: r.link_bukti });
+                worksheet.addRow({ no: idx + 1, jenis: r.jenis_tata_kelola, nama: r.nama_sistem, akses: r.akses, unit: r.unit_pengelola || '-', link: r.link_bukti });
             });
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
             res.setHeader('Content-Disposition', 'attachment; filename=Tabel_5_1_SISFO.xlsx');
