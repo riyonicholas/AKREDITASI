@@ -297,8 +297,10 @@ export default function PimpinanPage() {
                   {/* Periode Mulai */}
                   <div>
                     <Input 
-                      type="date"
+                      type="text"
+                      maxLength="4"
                       label="Periode Mulai"
+                      placeholder="Contoh: 2024"
                       value={formData.periode_mulai} 
                       onChange={(e) => setFormData({ ...formData, periode_mulai: e.target.value })} 
                     />
@@ -306,8 +308,10 @@ export default function PimpinanPage() {
                   {/* Periode Selesai */}
                   <div>
                     <Input 
-                      type="date"
+                      type="text"
+                      maxLength="4"
                       label="Periode Selesai"
+                      placeholder="Contoh: 2028"
                       value={formData.periode_selesai} 
                       onChange={(e) => setFormData({ ...formData, periode_selesai: e.target.value })} 
                     />

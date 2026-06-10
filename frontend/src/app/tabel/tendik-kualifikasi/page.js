@@ -164,10 +164,10 @@ export default function TendikKualifikasiPage() {
               <table className="w-full text-left whitespace-nowrap">
                 <thead className="bg-[#1E3A8A]">
                   <tr>
-                    <th rowSpan="2" className="x-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 border-r border-white/20 text-center align-middle">No</th>
-                    <th rowSpan="2" className="x-8 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 align-middle">Jenis Tenaga Kependidikan</th>
-                    <th colSpan="8" className="x-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 border-r border-white/20 text-center ">Jumlah Berdasarkan Pendidikan Terakhir</th>
-                    <th rowSpan="2" className="x-8 py-4 text-xs font-bold text-slate-100 uppercase tracking-[0.2em] align-middle border-r border-white/20">Unit Kerja</th>
+                    <th rowSpan="2" className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 border-r border-white/20 text-center align-middle">No</th>
+                    <th rowSpan="2" className="px-8 py-4 text-xs font-bold text-slate-100 uppercase tracking-wider border-r border-white/20 text-left align-middle">Jenis Tenaga Kependidikan</th>
+                    <th colSpan="8" className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-100 border-r border-white/20 text-center align-middle">Jumlah Berdasarkan Pendidikan Terakhir</th>
+                    <th rowSpan="2" className="px-8 py-4 text-xs font-bold text-slate-100 uppercase tracking-[0.2em] align-middle text-center border-r border-white/20">Unit Kerja</th>
                   </tr>
                   <tr className="bg-[#162d6e]">
                      {['S3', 'S2', 'S1', 'D4', 'D3', 'D2', 'D1', 'SMA'].map(edu => (

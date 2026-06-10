@@ -154,28 +154,30 @@ export default function UnitKerjaPage() {
           </Card>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data Unit Kerja' : 'Input Unit Kerja Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 gap-6">
-                  <div>
-                    <Input 
-                      label="Nama Unit Kerja / Fakultas"
-                      value={formData.nama_unit} 
-                      onChange={(e) => setFormData({...formData, nama_unit: e.target.value})} 
-                      required 
-                      placeholder="Contoh: Fakultas Teknik / Biro Administrasi Akademik" 
-                    />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-lg animate-in zoom-in-95 duration-200">
+              <Card title={editingId ? 'Edit Data Unit Kerja' : 'Input Unit Kerja Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="grid grid-cols-1 gap-6">
+                    <div>
+                      <Input 
+                        label="Nama Unit Kerja / Fakultas"
+                        value={formData.nama_unit} 
+                        onChange={(e) => setFormData({...formData, nama_unit: e.target.value})} 
+                        required 
+                        placeholder="Contoh: Fakultas Teknik / Biro Administrasi Akademik" 
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-                  <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
-                  <Button type="submit">{editingId ? 'Update Unit Kerja' : 'Simpan Unit Kerja'}</Button>
-                </div>
-              </form>
-            </Card>
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Unit Kerja' : 'Simpan Unit Kerja'}</Button>
+                  </div>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 

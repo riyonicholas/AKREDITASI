@@ -30,6 +30,7 @@ const Model1a1 = {
         const sql = `
             SELECT 
                 t.id_pimpinan,
+                t.id_pegawai,
                 IF(uk.nama_unit = 'PRODI', CONCAT('PRODI ', pr.nama_prodi), uk.nama_unit) AS nama_unit_display,
                 p.nama_lengkap,
                 t.periode_mulai,
@@ -117,6 +118,7 @@ const Model1a1 = {
         const sql = `
             SELECT 
                 t.id_pimpinan,
+                t.id_pegawai,
                 IF(uk.nama_unit = 'PRODI', CONCAT('PRODI ', pr.nama_prodi), uk.nama_unit) AS nama_unit_display,
                 p.nama_lengkap, t.periode_mulai, t.periode_selesai,
                 p.pendidikan_terakhir, 
