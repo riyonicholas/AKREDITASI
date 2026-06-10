@@ -16,7 +16,7 @@ const mataKuliahRoutes = require('./routes/prodi/mata_kuliah');
 const profilLulusanRoutes = require('./routes/prodi/profil_lulusan');
 const cplRoutes = require('./routes/prodi/cpl');
 const cpmkRoutes = require('./routes/prodi/cpmk');
-const unitKerjaRoutes = require('./routes/master/unitKerjaRoutes');
+const unitKerjaRoutes = require('./routes/master/unit_kerja');
 const jabatanStrukturalRoutes = require('./routes/master/jabatanStrukturalRoutes');
 const panduanRoutes = require('./routes/master/panduanRoutes');
 

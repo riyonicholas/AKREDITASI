@@ -49,6 +49,7 @@ export const GROUPED_MENUS_TABEL = [
     {
         group: "MASTER DATA",
         items: [
+            { key: "master/unit-kerja", label: "Unit Kerja", icon: "🏢" },
             { key: "master/pegawai", label: "Pegawai", icon: "👥" },
             { key: "master/dosen", label: "Dosen", icon: "👨‍🏫" },
             { key: "master/tendik", label: "Tendik", icon: "👨‍💼" },

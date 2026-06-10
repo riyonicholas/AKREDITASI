@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, Plus, Edit, Trash2, Download, RefreshCw, RotateCcw, Trash, Monitor, Link as LinkIcon, ExternalLink, ShieldCheck, Globe, Shield } from 'lucide-react';
+import { showSuccess, showError as alertError, showConfirm } from '@/components/CustomAlerts';
 
 export default function SistemTataKelolaPage() {
   const router = useRouter();
@@ -15,20 +16,14 @@ export default function SistemTataKelolaPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [showTrash, setShowTrash] = useState(false);
-  const [error, setError] = useState('');
   
   const [formData, setFormData] = useState({
     jenis_tata_kelola: '',
     nama_sistem: '',
     akses: 'Internet',
-    id_unit: '',
+    unit_pengelola: '',
     link_bukti: '',
   });
-
-  const showError = (msg) => {
-    setError(msg);
-    setTimeout(() => setError(''), 5000);
-  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -45,24 +40,28 @@ export default function SistemTataKelolaPage() {
     try {
       const baseUrl = 'http://localhost:5000/api/sisfo/5-1-sistem-tata-kelola';
       
-      const [activeRes, trashRes] = await Promise.all([
+      const [activeRes, trashRes, unitsRes] = await Promise.all([
         fetch(baseUrl, { headers: { 'Authorization': `Bearer ${token}` } }),
         fetch(`${baseUrl}/trash`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch('http://localhost:5000/api/master/unit-kerja', { headers: { 'Authorization': `Bearer ${token}` } })
       ]);
       
       const activeResult = await activeRes.json();
       const trashResult = await trashRes.json();
+      const unitsResult = await unitsRes.json();
       
       if (activeResult.success) {
         setActiveData(activeResult.data || []);
-        setUnits(activeResult.units || []);
       }
       if (trashResult.success) {
         setTrashData(trashResult.data || []);
       }
+      if (unitsResult.success) {
+        setUnits(unitsResult.data || []);
+      }
     } catch (err) {
       console.error('Error fetching data:', err);
-      showError('Gagal memuat data dari server');
+      alertError('Gagal memuat data dari server');
     } finally {
       setLoading(false);
     }
@@ -86,19 +85,19 @@ export default function SistemTataKelolaPage() {
         },
         body: JSON.stringify({
           ...formData,
-          id_unit: formData.id_unit ? parseInt(formData.id_unit) : null
+          unit_pengelola: formData.unit_pengelola || null
         }),
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
         resetForm();
       } else {
-        showError(result.message || 'Terjadi kesalahan saat menyimpan data');
+        alertError(result.message || 'Terjadi kesalahan saat menyimpan data');
       }
     } catch (err) {
-      showError('Terjadi kesalahan koneksi server');
+      alertError('Terjadi kesalahan koneksi server');
     }
   };
 
@@ -108,14 +107,14 @@ export default function SistemTataKelolaPage() {
       jenis_tata_kelola: item.jenis_tata_kelola || '',
       nama_sistem: item.nama_sistem || '',
       akses: item.akses || 'Internet',
-      id_unit: item.id_unit ? item.id_unit.toString() : '',
+      unit_pengelola: item.unit_pengelola || '',
       link_bukti: item.link_bukti || '',
     });
     setShowForm(true);
   };
 
   const handleSoftDelete = async (id) => {
-    if (!confirm('Pindahkan data tata kelola ini ke tempat sampah?')) return;
+    if (!(await showConfirm('Pindahkan data tata kelola ini ke tempat sampah?', 'Ya, Pindahkan'))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/sisfo/5-1-sistem-tata-kelola/${id}`, {
@@ -124,13 +123,13 @@ export default function SistemTataKelolaPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
       } else {
-        showError(result.message || 'Gagal menghapus data');
+        alertError(result.message || 'Gagal menghapus data');
       }
     } catch (err) {
-      showError('Terjadi kesalahan server');
+      alertError('Terjadi kesalahan server');
     }
   };
 
@@ -143,18 +142,18 @@ export default function SistemTataKelolaPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
       } else {
-        showError(result.message || 'Gagal memulihkan data');
+        alertError(result.message || 'Gagal memulihkan data');
       }
     } catch (err) {
-      showError('Terjadi kesalahan server');
+      alertError('Terjadi kesalahan server');
     }
   };
 
   const handleHardDelete = async (id) => {
-    if (!confirm('HAPUS PERMANEN? Tindakan ini tidak dapat dibatalkan.')) return;
+    if (!(await showConfirm('HAPUS PERMANEN? Tindakan ini tidak dapat dibatalkan.', 'Ya, Hapus Permanen'))) return;
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`http://localhost:5000/api/sisfo/5-1-sistem-tata-kelola/hard/${id}`, {
@@ -163,13 +162,13 @@ export default function SistemTataKelolaPage() {
       });
       const result = await res.json();
       if (result.success) {
-        alert(result.message);
+        showSuccess(result.message);
         fetchData();
       } else {
-        showError(result.message || 'Gagal menghapus permanen');
+        alertError(result.message || 'Gagal menghapus permanen');
       }
     } catch (err) {
-      showError('Terjadi kesalahan server');
+      alertError('Terjadi kesalahan server');
     }
   };
 
@@ -178,7 +177,7 @@ export default function SistemTataKelolaPage() {
       jenis_tata_kelola: '',
       nama_sistem: '',
       akses: 'Internet',
-      id_unit: '',
+      unit_pengelola: '',
       link_bukti: '',
     });
     setEditingId(null);
@@ -213,12 +212,6 @@ export default function SistemTataKelolaPage() {
             </div>
           </div>
         </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-6 font-medium animate-in fade-in duration-300">
-            {error}
-          </div>
-        )}
 
         {/* Stats & Controls */}
         <div className="flex flex-col lg:flex-row gap-4 xl:gap-6 mb-8 items-end">
@@ -330,16 +323,13 @@ export default function SistemTataKelolaPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Unit Pengelola</label>
-                  <select 
-                    value={formData.id_unit} 
-                    onChange={(e) => setFormData({...formData, id_unit: e.target.value})} 
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-2xl outline-none transition font-medium text-slate-900 cursor-pointer"
-                  >
-                    <option value="">-- Pilih Unit --</option>
-                    {units.map(u => (
-                      <option key={u.id_unit} value={u.id_unit}>{u.nama_unit}</option>
-                    ))}
-                  </select>
+                  <input 
+                    type="text" 
+                    value={formData.unit_pengelola} 
+                    onChange={(e) => setFormData({...formData, unit_pengelola: e.target.value})} 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-blue-500 rounded-2xl outline-none transition font-medium text-slate-900" 
+                    placeholder="Contoh: Biro Administrasi Umum" 
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-bold text-slate-600 mb-2">Link Bukti Dokumen/Sistem</label>
@@ -406,7 +396,17 @@ export default function SistemTataKelolaPage() {
                           {item.akses}
                         </span>
                       </td>
-                      <td className="px-6 py-4 border-r border-b border-slate-200 text-left font-bold text-slate-500">{item.nama_unit || '-'}</td>
+                      <td className="px-6 py-4 border-r border-b border-slate-200 text-left font-bold text-slate-500">
+                        {(() => {
+                          if (!item.unit_pengelola) return '-';
+                          const unitId = parseInt(item.unit_pengelola);
+                          if (!isNaN(unitId)) {
+                            const foundUnit = units.find(u => parseInt(u.id_unit) === unitId);
+                            if (foundUnit) return foundUnit.nama_unit;
+                          }
+                          return item.unit_pengelola;
+                        })()}
+                      </td>
                       <td className="px-4 py-4 border-r border-b border-slate-200">
                         {item.link_bukti ? (
                           <a 
