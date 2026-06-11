@@ -21,6 +21,8 @@ export default function SumberDanaPage() {
   const [prodiList, setProdiList] = useState([]);
   const [tahunList, setTahunList] = useState([]);
   const [showTrash, setShowTrash] = useState(false);
+  const [openProdi, setOpenProdi] = useState(false);
+  const [openTahun, setOpenTahun] = useState(false);
 
   const [formData, setFormData] = useState({
     id_prodi: '',
@@ -390,25 +392,68 @@ export default function SumberDanaPage() {
           </div>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Sumber Dana' : 'Input Sumber Dana Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Sumber Dana' : 'Input Sumber Dana Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Program Studi</label>
-                    <select value={formData.id_prodi} onChange={(e) => setFormData({ ...formData, id_prodi: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
-                      <option value="">Pilih Prodi</option>
-                      {prodiList.map(p => <option key={p.id_prodi} value={p.id_prodi}>{p.nama_prodi}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenProdi(!openProdi)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.id_prodi ? prodiList.find(p => String(p.id_prodi) === String(formData.id_prodi))?.nama_prodi : 'Pilih Prodi'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openProdi ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openProdi && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {prodiList.map(p => (
+                            <div 
+                              key={p.id_prodi}
+                              onClick={() => {
+                                setFormData({...formData, id_prodi: String(p.id_prodi)});
+                                setOpenProdi(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {p.nama_prodi}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Tahun Akademik</label>
-                    <select value={formData.id_tahun} onChange={(e) => setFormData({ ...formData, id_tahun: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
-                      <option value="">Pilih Tahun</option>
-                      {tahunList.map(t => <option key={t.id_tahun} value={t.id_tahun}>{t.tahun}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenTahun(!openTahun)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.id_tahun ? tahunList.find(t => String(t.id_tahun) === String(formData.id_tahun))?.tahun : 'Pilih Tahun'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openTahun ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openTahun && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {tahunList.map(t => (
+                            <div 
+                              key={t.id_tahun}
+                              onClick={() => {
+                                setFormData({...formData, id_tahun: String(t.id_tahun)});
+                                setOpenTahun(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {t.tahun}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Jenis / Sumber Pendanaan</label>
@@ -439,6 +484,7 @@ export default function SumberDanaPage() {
                 </div>
               </form>
             </Card>
+            </div>
           </div>
         )}
 

@@ -19,6 +19,8 @@ export default function TPMPage() {
   const [error, setError] = useState('');
   const [unitList, setUnitList] = useState([]);
   const [tahunList, setTahunList] = useState([]);
+  const [openJenisUnit, setOpenJenisUnit] = useState(false);
+  const [openUnit, setOpenUnit] = useState(false);
   
   const [formData, setFormData] = useState({
     jenis_unit: 'PT',
@@ -324,71 +326,139 @@ export default function TPMPage() {
           </div>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="bg-white rounded-2xl shadow-sm shadow-slate-200/50 border border-slate-200 p-8 mb-8 animate-in slide-in-from-top-4 duration-500">
-            <h2 className="text-xl font-black text-slate-900 mb-6">{editingId ? 'Edit Data SPMI' : 'Input Data SPMI Baru'}</h2>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Jenis Unit SPMI</label>
-                  <div className="relative">
-                    <select value={formData.jenis_unit} onChange={(e) => setFormData({...formData, jenis_unit: e.target.value})} className="w-full px-4 py-3 pr-10 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none text-slate-900" required>
-                      <option value="PT">PT</option>
-                      <option value="UPPS">UPPS</option>
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                      <svg className="h-4 w-4 stroke-[3px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data SPMI' : 'Input Data SPMI Baru'} icon={<ShieldCheck className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div>
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Jenis Unit SPMI</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenJenisUnit(!openJenisUnit)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.jenis_unit || 'Pilih Jenis Unit'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openJenisUnit ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openJenisUnit && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {['PT', 'UPPS'].map(opt => (
+                              <div 
+                                key={opt}
+                                onClick={() => {
+                                  setFormData({...formData, jenis_unit: opt});
+                                  setOpenJenisUnit(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {opt}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Unit Kerja</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenUnit(!openUnit)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_unit ? unitList.find(u => String(u.id_unit) === String(formData.id_unit))?.nama_unit : 'Pilih Unit Kerja'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openUnit ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openUnit && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {unitList.map(u => (
+                              <div 
+                                key={u.id_unit}
+                                onClick={() => {
+                                  setFormData({...formData, id_unit: String(u.id_unit)});
+                                  setOpenUnit(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {u.nama_unit}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="lg:col-span-2">
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Link Dokumen SPMI</label>
+                      <input 
+                        type="url" 
+                        value={formData.dokumen_spmi} 
+                        onChange={(e) => setFormData({...formData, dokumen_spmi: e.target.value})} 
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                        placeholder="https://..." 
+                      />
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 lg:col-span-3">
+                      <label className="text-[0.78rem] font-black text-slate-500 uppercase tracking-widest mb-3 block">SDM Auditor</label>
+                      <div className="flex flex-col md:flex-row gap-6">
+                        <div className="flex-1">
+                          <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Certified</label>
+                          <input 
+                            type="number" 
+                            value={formData.auditor_certified} 
+                            onChange={(e) => setFormData({...formData, auditor_certified: parseInt(e.target.value) || 0})} 
+                            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Non-Certified</label>
+                          <input 
+                            type="number" 
+                            value={formData.auditor_non_certified} 
+                            onChange={(e) => setFormData({...formData, auditor_non_certified: parseInt(e.target.value) || 0})} 
+                            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Frekuensi Audit / Tahun</label>
+                          <input 
+                            type="number" 
+                            value={formData.frekuensi_audit} 
+                            onChange={(e) => setFormData({...formData, frekuensi_audit: parseInt(e.target.value) || 1})} 
+                            className="w-full rounded-xl border border-slate-200 bg-white py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-1">
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Link Bukti Sertifikat</label>
+                      <input 
+                        type="url" 
+                        value={formData.bukti_certified_auditor} 
+                        onChange={(e) => setFormData({...formData, bukti_certified_auditor: e.target.value})} 
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                        placeholder="https://..." 
+                      />
+                    </div>
+                    <div className="md:col-span-2 lg:col-span-2">
+                      <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Link Laporan Audit Mutu Internal (AMI)</label>
+                      <input 
+                        type="url" 
+                        value={formData.laporan_audit} 
+                        onChange={(e) => setFormData({...formData, laporan_audit: e.target.value})} 
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all" 
+                        placeholder="https://..." 
+                      />
                     </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Unit Kerja</label>
-                  <div className="relative">
-                    <select value={formData.id_unit} onChange={(e) => setFormData({...formData, id_unit: e.target.value})} className="w-full px-4 py-3 pr-10 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none text-slate-900" required>
-                      <option value="">Pilih Unit Kerja</option>
-                      {unitList.map(u => <option key={u.id_unit} value={u.id_unit}>{u.nama_unit}</option>)}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                      <svg className="h-4 w-4 stroke-[3px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                    </div>
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Data' : 'Simpan Data SPMI'}</Button>
                   </div>
-                </div>
-                <div className="lg:col-span-2">
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Link Dokumen SPMI</label>
-                  <input type="url" value={formData.dokumen_spmi} onChange={(e) => setFormData({...formData, dokumen_spmi: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium text-slate-900" placeholder="https://..." />
-                </div>
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-3">SDM Auditor</label>
-                  <div className="flex gap-4">
-                    <div className="flex-1">
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Certified</label>
-                      <input type="number" value={formData.auditor_certified} onChange={(e) => setFormData({...formData, auditor_certified: parseInt(e.target.value) || 0})} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition font-bold text-slate-900" />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-[10px] font-bold text-slate-500 mb-1">Non-Cert.</label>
-                      <input type="number" value={formData.auditor_non_certified} onChange={(e) => setFormData({...formData, auditor_non_certified: parseInt(e.target.value) || 0})} className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition font-bold text-slate-900" />
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Frekuensi Audit / Tahun</label>
-                  <input type="number" value={formData.frekuensi_audit} onChange={(e) => setFormData({...formData, frekuensi_audit: parseInt(e.target.value) || 1})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium text-slate-900" />
-                </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Link Bukti Sertifikat</label>
-                  <input type="url" value={formData.bukti_certified_auditor} onChange={(e) => setFormData({...formData, bukti_certified_auditor: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium text-slate-900" placeholder="https://..." />
-                </div>
-                <div className="md:col-span-2 lg:col-span-3">
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Link Laporan Audit Mutu Internal (AMI)</label>
-                  <input type="url" value={formData.laporan_audit} onChange={(e) => setFormData({...formData, laporan_audit: e.target.value})} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium text-slate-900" placeholder="https://..." />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
-                <button type="button" onClick={resetForm} className="px-8 py-3 bg-slate-50/80 text-slate-500 rounded-2xl hover:bg-slate-200 transition font-bold">Batal</button>
-                <button type="submit" className="px-10 py-3 bg-blue-600 text-white rounded-2xl hover:bg-violet-700 transition font-black shadow-lg shadow-violet-200/50">{editingId ? 'Update Data' : 'Simpan Data SPMI'}</button>
-              </div>
-            </form>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 

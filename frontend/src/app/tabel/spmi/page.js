@@ -18,11 +18,9 @@ export default function SPMIPage() {
   const [showTrash, setShowTrash] = useState(false);
   const [error, setError] = useState('');
   const [tahunList, setTahunList] = useState([]);
-  const [unitList, setUnitList] = useState([]);
-  
   const [formData, setFormData] = useState({
-    jenis_unit: 'PT',
-    id_unit: '',
+    unit_spmi: 'PT',
+    nama_unit_spmi: '',
     dokumen_spmi: '',
     auditor_certified: 0,
     auditor_non_certified: 0,
@@ -31,18 +29,12 @@ export default function SPMIPage() {
     laporan_audit: '',
   });
 
-  const showError = (msg) => {
-    setError(msg);
-    setTimeout(() => setError(''), 5000);
-  };
-
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) {
       router.push('/login');
     } else {
       fetchTahunList();
-      fetchUnitList();
     }
   }, [router]);
 
@@ -105,20 +97,6 @@ export default function SPMIPage() {
     }
   };
 
-  const fetchUnitList = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('http://localhost:5000/api/master/unit-kerja', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await res.json();
-      if (result.success) {
-        setUnitList(result.data);
-      }
-    } catch (err) {
-      console.error('Error fetching unit list:', err);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -158,8 +136,8 @@ export default function SPMIPage() {
   const handleEdit = (item) => {
     setEditingId(item.id_unit_spmi);
     setFormData({
-      jenis_unit: item.jenis_unit || 'PT',
-      id_unit: item.id_unit || '',
+      unit_spmi: item.unit_spmi || 'PT',
+      nama_unit_spmi: item.nama_unit_spmi || '',
       dokumen_spmi: item.dokumen_spmi || '',
       auditor_certified: item.auditor_certified || 0,
       auditor_non_certified: item.auditor_non_certified || 0,
@@ -233,8 +211,8 @@ export default function SPMIPage() {
 
   const resetForm = () => {
     setFormData({
-      jenis_unit: 'PT',
-      id_unit: '',
+      unit_spmi: 'PT',
+      nama_unit_spmi: '',
       dokumen_spmi: '',
       auditor_certified: 0,
       auditor_non_certified: 0,
@@ -358,7 +336,7 @@ export default function SPMIPage() {
                 <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Jenis Unit SPMI</label>
                   <div className="relative">
-                    <select value={formData.jenis_unit} onChange={(e) => setFormData({...formData, jenis_unit: e.target.value})} className="w-full px-4 py-3 pr-10 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none text-slate-900" required>
+                    <select value={formData.unit_spmi} onChange={(e) => setFormData({...formData, unit_spmi: e.target.value})} className="w-full px-4 py-3 pr-10 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none text-slate-900" required>
                       <option value="PT">PT</option>
                       <option value="UPPS">UPPS</option>
                     </select>
@@ -368,23 +346,15 @@ export default function SPMIPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-600 mb-2">Unit Kerja</label>
-                  <div className="relative">
-                    <select 
-                      value={formData.id_unit} 
-                      onChange={(e) => setFormData({...formData, id_unit: e.target.value})} 
-                      className="w-full px-4 py-3 pr-10 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium appearance-none text-slate-900"
-                      required
-                    >
-                      <option value="">Pilih Unit Kerja</option>
-                      {unitList.map(unit => (
-                        <option key={unit.id_unit} value={unit.id_unit}>{unit.nama_unit}</option>
-                      ))}
-                    </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-500">
-                      <svg className="h-4 w-4 stroke-[3px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                    </div>
-                  </div>
+                  <label className="block text-sm font-bold text-slate-600 mb-2">Nama Unit SPMI</label>
+                  <input
+                    type="text"
+                    value={formData.nama_unit_spmi}
+                    onChange={(e) => setFormData({...formData, nama_unit_spmi: e.target.value})}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 focus:border-violet-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] rounded-2xl outline-none transition-all font-medium text-slate-900"
+                    placeholder="Contoh: LPM / LPMI"
+                    required
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-600 mb-2">Dokumen SPMI (Link)</label>
@@ -460,7 +430,7 @@ export default function SPMIPage() {
                     <tr key={item.id_unit_spmi} className="hover:bg-violet-50/40 even:bg-slate-50/40 transition-colors group border-b border-slate-200">
                       {showTrash ? (
                         <>
-                          <td className="px-6 py-6 border-r border-slate-200 text-sm text-slate-900">{item.nama_unit}</td>
+                          <td className="px-6 py-6 border-r border-slate-200 text-sm text-slate-900">{item.nama_unit_spmi}</td>
                           <td className="px-6 py-6 border-r border-slate-200 text-xs text-slate-500 font-medium truncate max-w-[200px]">
                             {item.dokumen_spmi || '-'}
                           </td>
@@ -468,10 +438,10 @@ export default function SPMIPage() {
                       ) : (
                         <>
                           <td className="px-6 py-6 border-r border-slate-200 text-center text-slate-900 text-sm">
-                            {item.jenis_unit || '-'}
+                            {item.unit_spmi || '-'}
                           </td>
                           <td className="px-6 py-6 border-r border-slate-200 text-center font-medium text-slate-900 text-sm">
-                            {item.nama_unit || '-'}
+                            {item.nama_unit_spmi || '-'}
                           </td>
                           <td className="px-6 py-6 border-r border-slate-200 text-center">
                             {item.dokumen_spmi ? (

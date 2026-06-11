@@ -26,6 +26,9 @@ export default function PengembanganPage() {
   const [dosenList, setDosenList] = useState([]);
   const [tahunList, setTahunList] = useState([]);
   
+  const [openDosen, setOpenDosen] = useState(false);
+  const [openTahun, setOpenTahun] = useState(false);
+  
   const [formData, setFormData] = useState({
     id_dosen: '',
     id_tahun: '',
@@ -390,25 +393,68 @@ export default function PengembanganPage() {
           </div>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Pengembangan' : 'Input Pengembangan Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Pengembangan' : 'Input Pengembangan Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Pilih Dosen</label>
-                    <select value={formData.id_dosen} onChange={(e) => setFormData({...formData, id_dosen: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
-                      <option value="">Pilih Dosen</option>
-                      {dosenList.map(d => <option key={d.id_dosen} value={d.id_dosen}>{d.nama_lengkap}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenDosen(!openDosen)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.id_dosen ? dosenList.find(d => String(d.id_dosen) === String(formData.id_dosen))?.nama_lengkap : '-- Pilih Dosen --'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openDosen ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openDosen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {dosenList.map(d => (
+                            <div 
+                              key={d.id_dosen}
+                              onClick={() => {
+                                setFormData({...formData, id_dosen: String(d.id_dosen)});
+                                setOpenDosen(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {d.nama_lengkap}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Tahun Akademik</label>
-                    <select value={formData.id_tahun} onChange={(e) => setFormData({...formData, id_tahun: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
-                      <option value="">Pilih Tahun</option>
-                      {tahunList.map(t => <option key={t.id_tahun} value={t.id_tahun}>{t.tahun}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenTahun(!openTahun)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.id_tahun ? tahunList.find(t => String(t.id_tahun) === String(formData.id_tahun))?.tahun : '-- Pilih Tahun --'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openTahun ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openTahun && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {tahunList.map(t => (
+                            <div 
+                              key={t.id_tahun}
+                              onClick={() => {
+                                setFormData({...formData, id_tahun: String(t.id_tahun)});
+                                setOpenTahun(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {t.tahun}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <Input label="Jenis Pengembangan" value={formData.jenis_pengembangan} onChange={(e) => setFormData({...formData, jenis_pengembangan: e.target.value})} placeholder="Contoh: Tugas Belajar, Sertifikasi, Pelatihan Riset" required />
@@ -426,6 +472,7 @@ export default function PengembanganPage() {
                 </div>
               </form>
             </Card>
+            </div>
           </div>
         )}
 

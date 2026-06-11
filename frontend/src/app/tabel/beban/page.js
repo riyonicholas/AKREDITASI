@@ -26,6 +26,7 @@ export default function BebanPage() {
   const [tahunList, setTahunList] = useState([]);
   const [prodiList, setProdiList] = useState([]);
   const [dosenList, setDosenList] = useState([]);
+  const [openDosen, setOpenDosen] = useState(false);
 
   const [formData, setFormData] = useState({
     id_dosen: '',
@@ -165,9 +166,8 @@ export default function BebanPage() {
 
   const handleEdit = (item) => {
     setEditingId(item.id_beban_kerja);
-    const dosenMatch = dosenList.find(d => d.nama_lengkap === item.nama_dtpr);
     setFormData({
-      id_dosen: String(dosenMatch?.id_dosen || ''),
+      id_dosen: String(item.id_dosen || ''),
       id_tahun: String(filterIdTahun),
       sks_ps_sendiri: String(item.sks_ps_sendiri || 0),
       sks_ps_lain: String(item.sks_ps_lain || 0),
@@ -352,18 +352,40 @@ export default function BebanPage() {
           </div>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Beban Kerja' : 'Input Beban Kerja Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Beban Kerja' : 'Input Beban Kerja Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="md:col-span-2 lg:col-span-2">
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Pilih DTPR (Dosen)</label>
-                    <select value={formData.id_dosen} onChange={(e) => setFormData({ ...formData, id_dosen: e.target.value })} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer" required>
-                      <option value="">Pilih Dosen</option>
-                      {dosenList.map(d => <option key={d.id_dosen} value={d.id_dosen}>{d.nama_lengkap}</option>)}
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenDosen(!openDosen)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.id_dosen ? dosenList.find(d => String(d.id_dosen) === formData.id_dosen)?.nama_lengkap : '-- Pilih Dosen --'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openDosen ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openDosen && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {dosenList.map(d => (
+                            <div 
+                              key={d.id_dosen}
+                              onClick={() => {
+                                setFormData({...formData, id_dosen: String(d.id_dosen)});
+                                setOpenDosen(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {d.nama_lengkap}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <Input type="number" step="0.01" label="SKS PS Sendiri" value={formData.sks_ps_sendiri} onChange={(e) => setFormData({ ...formData, sks_ps_sendiri: e.target.value })} placeholder="0.00" />
@@ -380,6 +402,19 @@ export default function BebanPage() {
                   <div>
                     <Input type="number" step="0.01" label="SKS PkM" value={formData.sks_pkm} onChange={(e) => setFormData({ ...formData, sks_pkm: e.target.value })} placeholder="0.00" />
                   </div>
+                  {/* SKS Manajemen PT Sendiri — READ ONLY, otomatis dari 1.A.1 */}
+                  <div>
+                    <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">SKS Manajemen PT Sendiri</label>
+                    <div className="w-full rounded-xl border border-slate-200 bg-slate-100 py-2.5 px-4 text-[0.9rem] text-slate-500 font-medium flex items-center gap-2 cursor-not-allowed">
+                      <span className="flex-1">
+                        {editingId
+                          ? (activeData.find(d => d.id_beban_kerja === editingId)?.sks_manajemen_pt_sendiri ?? 0)
+                          : '—'
+                        }
+                      </span>
+                      <span className="text-[0.65rem] bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider shrink-0">Otomatis dari 1.A.1</span>
+                    </div>
+                  </div>
                   <div>
                     <Input type="number" step="0.01" label="SKS Manajemen PT Lain" value={formData.sks_manajemen_pt_lain} onChange={(e) => setFormData({ ...formData, sks_manajemen_pt_lain: e.target.value })} placeholder="0.00" />
                   </div>
@@ -390,6 +425,7 @@ export default function BebanPage() {
                 </div>
               </form>
             </Card>
+            </div>
           </div>
         )}
 

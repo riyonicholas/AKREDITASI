@@ -20,6 +20,8 @@ export default function SarprasPendidikanPage() {
   const [showTrash, setShowTrash] = useState(false);
   const [error, setError] = useState('');
   const [prodiList, setProdiList] = useState([]);
+  const [openStatusMilik, setOpenStatusMilik] = useState(false);
+  const [openStatusLisensi, setOpenStatusLisensi] = useState(false);
   
   const [formData, setFormData] = useState({
     id_prodi: '',
@@ -344,10 +346,11 @@ export default function SarprasPendidikanPage() {
           </div>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data Sarpras' : 'Input Sarpras Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data Sarpras' : 'Input Sarpras Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
               <form onSubmit={handleSubmit} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
@@ -364,18 +367,66 @@ export default function SarprasPendidikanPage() {
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Status Milik</label>
-                    <select value={formData.status_milik} onChange={(e) => setFormData({...formData, status_milik: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer">
-                      <option value="M">Milik Sendiri (M)</option>
-                      <option value="W">Sewa (W)</option>
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenStatusMilik(!openStatusMilik)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.status_milik === 'M' ? 'Milik Sendiri (M)' : formData.status_milik === 'W' ? 'Sewa (W)' : 'Pilih Status Milik'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openStatusMilik ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openStatusMilik && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {[
+                            { value: 'M', label: 'Milik Sendiri (M)' },
+                            { value: 'W', label: 'Sewa (W)' }
+                          ].map(opt => (
+                            <div 
+                              key={opt.value}
+                              onClick={() => {
+                                setFormData({...formData, status_milik: opt.value});
+                                setOpenStatusMilik(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {opt.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Status Lisensi</label>
-                    <select value={formData.status_lisensi} onChange={(e) => setFormData({...formData, status_lisensi: e.target.value})} className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-900 outline-none focus:border-violet-500 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.2)] transition-all cursor-pointer">
-                      <option value="L">Berlisensi (L)</option>
-                      <option value="P">Public Domain (P)</option>
-                      <option value="T">Tidak Berlisensi (T)</option>
-                    </select>
+                    <div className="relative">
+                      <div 
+                        onClick={() => setOpenStatusLisensi(!openStatusLisensi)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                      >
+                        <span className="truncate">{formData.status_lisensi === 'L' ? 'Berlisensi (L)' : formData.status_lisensi === 'P' ? 'Public Domain (P)' : formData.status_lisensi === 'T' ? 'Tidak Berlisensi (T)' : 'Pilih Status Lisensi'}</span>
+                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openStatusLisensi ? 'rotate-0' : 'rotate-45'}`} />
+                      </div>
+                      {openStatusLisensi && (
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                          {[
+                            { value: 'L', label: 'Berlisensi (L)' },
+                            { value: 'P', label: 'Public Domain (P)' },
+                            { value: 'T', label: 'Tidak Berlisensi (T)' }
+                          ].map(opt => (
+                            <div 
+                              key={opt.value}
+                              onClick={() => {
+                                setFormData({...formData, status_lisensi: opt.value});
+                                setOpenStatusLisensi(false);
+                              }}
+                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                            >
+                              {opt.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="md:col-span-2">
                     <label className="text-[0.78rem] font-semibold uppercase tracking-wider text-slate-400 mb-1.5 block">Detail Perangkat & Fasilitas</label>
@@ -396,6 +447,7 @@ export default function SarprasPendidikanPage() {
                 </div>
               </form>
             </Card>
+            </div>
           </div>
         )}
         
