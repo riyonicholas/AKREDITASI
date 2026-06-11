@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, UserCheck, Shield, Key, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, UserCheck, Shield, Key, ToggleLeft, ToggleRight } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -209,7 +209,6 @@ export default function UsersPage() {
         {/* Header Section */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight m-0">Master Users</h1>
             <p className="text-slate-500 mt-1.5 text-sm">Kelola hak akses dan akun pengguna sistem</p>
           </div>
@@ -257,79 +256,81 @@ export default function UsersPage() {
           </Card>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data User' : 'Input Data User Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Input 
-                      label="Username"
-                      value={formData.username} 
-                      onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                      placeholder="Ex: admin_prodi" 
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Unit Terkait</label>
-                    <div className="relative">
-                      <div 
-                        onClick={() => setOpenUnit(!openUnit)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all focus:border-violet-300 outline-none"
-                      >
-                        <span className="truncate">{formData.id_unit ? unitList.find(u => u.id_unit == formData.id_unit)?.nama_unit : '-- Pilih Unit --'}</span>
-                        <Plus size={18} className={`shrink-0 transition-transform duration-300 ${openUnit ? 'rotate-0' : 'rotate-45'}`} />
-                      </div>
-                      {openUnit && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
-                          {unitList.map(unit => (
-                            <div 
-                              key={unit.id_unit}
-                              onClick={() => {
-                                setFormData({...formData, id_unit: unit.id_unit});
-                                setOpenUnit(false);
-                              }}
-                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
-                            >
-                              {unit.nama_unit}
-                            </div>
-                          ))}
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data User' : 'Input Data User Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Input 
+                        label="Username"
+                        value={formData.username} 
+                        onChange={(e) => setFormData({...formData, username: e.target.value})} 
+                        placeholder="Ex: admin_prodi" 
+                        required 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Unit Terkait</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenUnit(!openUnit)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all focus:border-violet-300 outline-none"
+                        >
+                          <span className="truncate">{formData.id_unit ? unitList.find(u => u.id_unit == formData.id_unit)?.nama_unit : '-- Pilih Unit --'}</span>
+                          <Plus size={18} className={`shrink-0 transition-transform duration-300 ${openUnit ? 'rotate-0' : 'rotate-45'}`} />
                         </div>
+                        {openUnit && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-2xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {unitList.map(unit => (
+                              <div 
+                                key={unit.id_unit}
+                                onClick={() => {
+                                  setFormData({...formData, id_unit: unit.id_unit});
+                                  setOpenUnit(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {unit.nama_unit}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Password</label>
+                      {!editingId ? (
+                        <div className="relative group">
+                          <input 
+                            type="text" 
+                            value={formData.password} 
+                            readOnly 
+                            className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none font-bold text-violet-600 cursor-not-allowed select-none text-[0.9rem]" 
+                          />
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-200/50 px-2 py-1 rounded-md border border-slate-200">Default</div>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={generateCaptcha}
+                          className="w-full py-2.5 bg-red-50 border-2 border-red-200 hover:bg-red-100 text-red-600 rounded-xl transition font-black flex items-center justify-center gap-2 group text-[0.9rem]"
+                        >
+                          <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
+                          RESET PASSWORD KE DEFAULT
+                        </button>
                       )}
                     </div>
                   </div>
-                  <div className="md:col-span-2">
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Password</label>
-                    {!editingId ? (
-                      <div className="relative group">
-                        <input 
-                          type="text" 
-                          value={formData.password} 
-                          readOnly 
-                          className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none font-bold text-violet-600 cursor-not-allowed select-none text-[0.9rem]" 
-                        />
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-200/50 px-2 py-1 rounded-md border border-slate-200">Default</div>
-                      </div>
-                    ) : (
-                      <button 
-                        type="button"
-                        onClick={generateCaptcha}
-                        className="w-full py-2.5 bg-red-50 border-2 border-red-200 hover:bg-red-100 text-red-600 rounded-xl transition font-black flex items-center justify-center gap-2 group text-[0.9rem]"
-                      >
-                        <RefreshCw size={18} className="group-hover:rotate-180 transition-transform duration-500" />
-                        RESET PASSWORD KE DEFAULT
-                      </button>
-                    )}
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Akun' : 'Buat Akun Baru'}</Button>
                   </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-                  <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
-                  <Button type="submit">{editingId ? 'Update Akun' : 'Buat Akun Baru'}</Button>
-                </div>
-              </form>
-            </Card>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 

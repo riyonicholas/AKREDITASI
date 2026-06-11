@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Edit, Trash2, RefreshCw, Briefcase, UserCheck, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Briefcase, UserCheck, Settings } from 'lucide-react';
 
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -12,12 +12,16 @@ import { showSuccess, showError, showConfirm } from '@/components/CustomAlerts';
 export default function TendikPage() {
   const router = useRouter();
   const [data, setData] = useState([]);
-  const [pegawaiList, setPegawaiList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [jenisSelection, setJenisSelection] = useState('Administrasi');
   
+  const [pegawaiList, setPegawaiList] = useState([]);
+
+  const [openPegawai, setOpenPegawai] = useState(false);
+  const [openJenis, setOpenJenis] = useState(false);
+
   const [formData, setFormData] = useState({
     id_pegawai: '',
     jenis_tendik: '',
@@ -29,9 +33,20 @@ export default function TendikPage() {
       router.push('/login');
     } else {
       fetchData();
-      fetchPegawaiList();
+      fetchPegawai();
     }
   }, [router]);
+
+  const fetchPegawai = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch('http://localhost:5000/api/master/pegawai', { headers: { 'Authorization': `Bearer ${token}` } });
+      const result = await res.json();
+      if (result.success) setPegawaiList(result.data);
+    } catch (err) {
+      console.error('Error fetching pegawai data:', err);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -48,21 +63,6 @@ export default function TendikPage() {
       console.error('Error fetching data:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchPegawaiList = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      const res = await fetch('http://localhost:5000/api/master/pegawai', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const result = await res.json();
-      if (result.success) {
-        setPegawaiList(result.data);
-      }
-    } catch (err) {
-      console.error('Error fetching pegawai list:', err);
     }
   };
 
@@ -145,7 +145,6 @@ export default function TendikPage() {
         {/* Header Section */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight m-0">Master Data - Tendik</h1>
             <p className="text-slate-500 mt-1.5 text-sm">Kelola database tenaga kependidikan</p>
           </div>
@@ -207,64 +206,92 @@ export default function TendikPage() {
           </Card>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data Tendik' : 'Input Tendik Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Pilih Pegawai</label>
-                    <select 
-                      value={formData.id_pegawai} 
-                      onChange={(e) => setFormData({...formData, id_pegawai: e.target.value})} 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer transition-all focus:border-violet-300 outline-none" 
-                      required
-                    >
-                      <option value="">-- Pilih Pegawai --</option>
-                      {pegawaiList.map(pegawai => (
-                        <option key={pegawai.id_pegawai} value={pegawai.id_pegawai}>{pegawai.nama_lengkap} - {pegawai.nikp}</option>
-                      ))}
-                    </select>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data Tendik' : 'Input Tendik Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Pilih Pegawai</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenPegawai(!openPegawai)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_pegawai ? pegawaiList.find(p => p.id_pegawai == formData.id_pegawai)?.nama_lengkap : '-- Pilih Pegawai --'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openPegawai ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openPegawai && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {pegawaiList.map(pegawai => (
+                              <div 
+                                key={pegawai.id_pegawai}
+                                onClick={() => {
+                                  setFormData({...formData, id_pegawai: pegawai.id_pegawai});
+                                  setOpenPegawai(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {pegawai.nama_lengkap} - {pegawai.nikp}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Jenis Tenaga Kependidikan</label>
+                      <div className="relative mb-3">
+                        <div 
+                          onClick={() => setOpenJenis(!openJenis)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{jenisSelection}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openJenis ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openJenis && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {['Administrasi', 'Pustakawan', 'Laboran/Teknisi', 'Lainnya'].map(jenis => (
+                              <div 
+                                key={jenis}
+                                onClick={() => {
+                                  setJenisSelection(jenis);
+                                  if (jenis !== 'Lainnya') {
+                                    setFormData({...formData, jenis_tendik: jenis});
+                                  } else {
+                                    setFormData({...formData, jenis_tendik: ''});
+                                  }
+                                  setOpenJenis(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {jenis}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {jenisSelection === 'Lainnya' && (
+                        <Input 
+                          value={formData.jenis_tendik} 
+                          onChange={(e) => setFormData({...formData, jenis_tendik: e.target.value})} 
+                          className="animate-in slide-in-from-top-2" 
+                          placeholder="Masukkan Jenis Tendik"
+                          required
+                        />
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Jenis Tenaga Kependidikan</label>
-                    <select 
-                      value={jenisSelection} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setJenisSelection(val);
-                        if (val !== 'Lainnya') {
-                          setFormData({...formData, jenis_tendik: val});
-                        } else {
-                          setFormData({...formData, jenis_tendik: ''});
-                        }
-                      }} 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer transition-all focus:border-violet-300 outline-none mb-3"
-                    >
-                      <option value="Administrasi">Administrasi</option>
-                      <option value="Pustakawan">Pustakawan</option>
-                      <option value="Laboran/Teknisi">Laboran/Teknisi</option>
-                      <option value="Lainnya">Lainnya</option>
-                    </select>
-                    
-                    {jenisSelection === 'Lainnya' && (
-                      <Input 
-                        value={formData.jenis_tendik} 
-                        onChange={(e) => setFormData({...formData, jenis_tendik: e.target.value})} 
-                        className="animate-in slide-in-from-top-2" 
-                        placeholder="Masukkan Jenis Tendik"
-                        required
-                      />
-                    )}
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Tendik' : 'Simpan Tendik'}</Button>
                   </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-                  <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
-                  <Button type="submit">{editingId ? 'Update Tendik' : 'Simpan Tendik'}</Button>
-                </div>
-              </form>
-            </Card>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 

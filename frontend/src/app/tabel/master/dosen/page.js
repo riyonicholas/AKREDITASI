@@ -26,6 +26,11 @@ export default function DosenPage() {
     { id: 4, name: 'Tenaga Ahli' },
   ];
 
+  const [openPegawai, setOpenPegawai] = useState(false);
+  const [openProdi, setOpenProdi] = useState(false);
+  const [openJafung, setOpenJafung] = useState(false);
+  const [openPt, setOpenPt] = useState(false);
+
   const [formData, setFormData] = useState({
     id_pegawai: '',
     nidn: '',
@@ -166,7 +171,6 @@ export default function DosenPage() {
         {/* Header Section */}
         <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            
             <h1 className="text-3xl font-bold text-slate-900 tracking-tight m-0">Master Data - Dosen</h1>
             <p className="text-slate-500 mt-1.5 text-sm">Kelola database dosen universitas dengan mudah</p>
           </div>
@@ -228,105 +232,164 @@ export default function DosenPage() {
           </Card>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data Dosen' : 'Input Data Dosen Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Pilih Pegawai</label>
-                    <select 
-                      value={formData.id_pegawai} 
-                      onChange={(e) => setFormData({...formData, id_pegawai: e.target.value})} 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer transition-all focus:border-violet-300 outline-none"
-                      required
-                    >
-                      <option value="">-- Pilih Pegawai --</option>
-                      {pegawaiList.map(p => (
-                        <option key={p.id_pegawai} value={p.id_pegawai}>{p.nama_lengkap} ({p.nikp})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Pilih Prodi</label>
-                    <select 
-                      value={formData.id_prodi} 
-                      onChange={(e) => setFormData({...formData, id_prodi: e.target.value})} 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer transition-all focus:border-violet-300 outline-none"
-                      required
-                    >
-                      <option value="">-- Pilih Program Studi --</option>
-                      {prodiList.map(p => (
-                        <option key={p.id_prodi} value={p.id_prodi}>{p.nama_prodi}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <Input 
-                      label="NIDN"
-                      value={formData.nidn} 
-                      onChange={(e) => setFormData({...formData, nidn: e.target.value})} 
-                      placeholder="Nomor Induk Dosen Nasional" 
-                    />
-                  </div>
-                  <div>
-                    <Input 
-                      label="NUPTK"
-                      value={formData.nuptk} 
-                      onChange={(e) => setFormData({...formData, nuptk: e.target.value})} 
-                      placeholder="NUPTK (Jika ada)" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Jabatan Fungsional</label>
-                    <select 
-                      value={formData.id_jabatan_fungsional} 
-                      onChange={(e) => setFormData({...formData, id_jabatan_fungsional: e.target.value})} 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer transition-all focus:border-violet-300 outline-none"
-                    >
-                      <option value="">-- Pilih Jafung --</option>
-                      {jafungList.map(j => (
-                        <option key={j.id} value={j.id}>{j.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Perguruan Tinggi</label>
-                    <select 
-                      value={ptSelection} 
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setPtSelection(val);
-                        if (val !== 'Lainnya') {
-                          setFormData({...formData, perguruan_tinggi: val});
-                        } else {
-                          setFormData({...formData, perguruan_tinggi: ''});
-                        }
-                      }} 
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer transition-all focus:border-violet-300 outline-none mb-3"
-                    >
-                      <option value="STIKOM PGRI BANYUWANGI">STIKOM PGRI BANYUWANGI</option>
-                      <option value="Lainnya">Lainnya</option>
-                    </select>
-                    
-                    {ptSelection === 'Lainnya' && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data Dosen' : 'Input Data Dosen Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Pilih Pegawai</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenPegawai(!openPegawai)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_pegawai ? pegawaiList.find(p => p.id_pegawai == formData.id_pegawai)?.nama_lengkap : '-- Pilih Pegawai --'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openPegawai ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openPegawai && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {pegawaiList.map(p => (
+                              <div 
+                                key={p.id_pegawai}
+                                onClick={() => {
+                                  setFormData({...formData, id_pegawai: p.id_pegawai});
+                                  setOpenPegawai(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {p.nama_lengkap} ({p.nikp})
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Pilih Prodi</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenProdi(!openProdi)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_prodi ? prodiList.find(p => p.id_prodi == formData.id_prodi)?.nama_prodi : '-- Pilih Program Studi --'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openProdi ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openProdi && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {prodiList.map(p => (
+                              <div 
+                                key={p.id_prodi}
+                                onClick={() => {
+                                  setFormData({...formData, id_prodi: p.id_prodi});
+                                  setOpenProdi(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {p.nama_prodi}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
                       <Input 
-                        value={formData.perguruan_tinggi} 
-                        onChange={(e) => setFormData({...formData, perguruan_tinggi: e.target.value})} 
-                        className="animate-in slide-in-from-top-2" 
-                        placeholder="Masukkan Nama Perguruan Tinggi"
-                        required
+                        label="NIDN"
+                        value={formData.nidn} 
+                        onChange={(e) => setFormData({...formData, nidn: e.target.value})} 
+                        placeholder="Nomor Induk Dosen Nasional" 
                       />
-                    )}
+                    </div>
+                    <div>
+                      <Input 
+                        label="NUPTK"
+                        value={formData.nuptk} 
+                        onChange={(e) => setFormData({...formData, nuptk: e.target.value})} 
+                        placeholder="NUPTK (Jika ada)" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Jabatan Fungsional</label>
+                      <div className="relative">
+                        <div 
+                          onClick={() => setOpenJafung(!openJafung)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_jabatan_fungsional ? jafungList.find(j => j.id == formData.id_jabatan_fungsional)?.name : '-- Pilih Jafung --'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openJafung ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openJafung && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {jafungList.map(j => (
+                              <div 
+                                key={j.id}
+                                onClick={() => {
+                                  setFormData({...formData, id_jabatan_fungsional: j.id});
+                                  setOpenJafung(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {j.name}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Perguruan Tinggi</label>
+                      <div className="relative mb-3">
+                        <div 
+                          onClick={() => setOpenPt(!openPt)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{ptSelection}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openPt ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openPt && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {['STIKOM PGRI BANYUWANGI', 'Lainnya'].map(pt => (
+                              <div 
+                                key={pt}
+                                onClick={() => {
+                                  setPtSelection(pt);
+                                  if (pt !== 'Lainnya') {
+                                    setFormData({...formData, perguruan_tinggi: pt});
+                                  } else {
+                                    setFormData({...formData, perguruan_tinggi: ''});
+                                  }
+                                  setOpenPt(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {pt}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {ptSelection === 'Lainnya' && (
+                        <Input 
+                          value={formData.perguruan_tinggi} 
+                          onChange={(e) => setFormData({...formData, perguruan_tinggi: e.target.value})} 
+                          className="animate-in slide-in-from-top-2" 
+                          placeholder="Masukkan Nama Perguruan Tinggi"
+                          required
+                        />
+                      )}
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-                  <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
-                  <Button type="submit">{editingId ? 'Update Dosen' : 'Simpan Dosen'}</Button>
-                </div>
-              </form>
-            </Card>
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Dosen' : 'Simpan Dosen'}</Button>
+                  </div>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 

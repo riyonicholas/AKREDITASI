@@ -204,35 +204,37 @@ export default function ProdiPage() {
           </Card>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data Prodi' : 'Input Prodi Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0">
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <Input 
-                      label="Nama Program Studi"
-                      value={formData.nama_prodi} 
-                      onChange={(e) => setFormData({...formData, nama_prodi: e.target.value})} 
-                      required 
-                      placeholder="Contoh: S1 Teknik Informatika" 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Unit</label>
-                    <div className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-400 font-bold flex items-center gap-2 cursor-not-allowed select-none text-[0.9rem]">
-                      <div className="w-2 h-2 bg-violet-600 rounded-full animate-pulse"></div>
-                      PRODI
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data Prodi' : 'Input Prodi Baru'} icon={<Plus className="text-violet-500" size={20}/>} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Input 
+                        label="Nama Program Studi"
+                        value={formData.nama_prodi} 
+                        onChange={(e) => setFormData({...formData, nama_prodi: e.target.value})} 
+                        required 
+                        placeholder="Contoh: S1 Teknik Informatika" 
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Unit</label>
+                      <div className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-400 font-bold flex items-center gap-2 cursor-not-allowed select-none text-[0.9rem]">
+                        <div className="w-2 h-2 bg-violet-600 rounded-full animate-pulse"></div>
+                        PRODI
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-                  <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
-                  <Button type="submit">{editingId ? 'Update Prodi' : 'Simpan Prodi'}</Button>
-                </div>
-              </form>
-            </Card>
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Prodi' : 'Simpan Prodi'}</Button>
+                  </div>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 

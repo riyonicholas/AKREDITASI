@@ -231,100 +231,102 @@ export default function PegawaiPage() {
           </Card>
         </div>
 
-        {/* Form Section */}
+        {/* Form Modal */}
         {showForm && (
-          <div className="mb-8 animate-in slide-in-from-top-4 duration-500">
-            <Card title={editingId ? 'Edit Data Pegawai' : 'Input Data Pegawai Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0">
-              <form onSubmit={handleSubmit} className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <Input
-                      label="Nama Lengkap"
-                      value={formData.nama_lengkap}
-                      onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
-                      required
-                      placeholder="Nama Lengkap dengan Gelar"
-                    />
-                  </div>
-                  <div>
-                    <Input
-                      label="NIKP"
-                      value={formData.nikp}
-                      onChange={(e) => setFormData({ ...formData, nikp: e.target.value })}
-                      placeholder="Nomor Induk Karyawan/Pegawai"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Unit Kerja</label>
-                    <div className="relative">
-                      <div
-                        onClick={() => setOpenUnit(!openUnit)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
-                      >
-                        <span className="truncate">{formData.id_unit ? unitList.find(u => u.id_unit == formData.id_unit)?.nama_unit : 'Pilih Unit Kerja'}</span>
-                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openUnit ? 'rotate-0' : 'rotate-45'}`} />
-                      </div>
-                      {openUnit && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
-                          {unitList.map(unit => (
-                            <div
-                              key={unit.id_unit}
-                              onClick={() => {
-                                setFormData({ ...formData, id_unit: unit.id_unit });
-                                setOpenUnit(false);
-                              }}
-                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
-                            >
-                              {unit.nama_unit}
-                            </div>
-                          ))}
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200 custom-scrollbar rounded-2xl">
+              <Card title={editingId ? 'Edit Data Pegawai' : 'Input Data Pegawai Baru'} icon={<Plus className="text-violet-500" size={20} />} variant="default" className="!p-0 shadow-2xl border-0 overflow-hidden">
+                <form onSubmit={handleSubmit} className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Input
+                        label="Nama Lengkap"
+                        value={formData.nama_lengkap}
+                        onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
+                        required
+                        placeholder="Nama Lengkap dengan Gelar"
+                      />
+                    </div>
+                    <div>
+                      <Input
+                        label="NIKP"
+                        value={formData.nikp}
+                        onChange={(e) => setFormData({ ...formData, nikp: e.target.value })}
+                        placeholder="Nomor Induk Karyawan/Pegawai"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Unit Kerja</label>
+                      <div className="relative">
+                        <div
+                          onClick={() => setOpenUnit(!openUnit)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_unit ? unitList.find(u => u.id_unit == formData.id_unit)?.nama_unit : 'Pilih Unit Kerja'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openUnit ? 'rotate-0' : 'rotate-45'}`} />
                         </div>
-                      )}
+                        {openUnit && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {unitList.map(unit => (
+                              <div
+                                key={unit.id_unit}
+                                onClick={() => {
+                                  setFormData({ ...formData, id_unit: unit.id_unit });
+                                  setOpenUnit(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {unit.nama_unit}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Jabatan Struktural</label>
+                      <div className="relative">
+                        <div
+                          onClick={() => setOpenJabatan(!openJabatan)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
+                        >
+                          <span className="truncate">{formData.id_jabatan_struktural ? jabatanList.find(j => j.id_jabatan_struktural == formData.id_jabatan_struktural)?.nama_jabatan : 'Pilih Jabatan Struktural'}</span>
+                          <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openJabatan ? 'rotate-0' : 'rotate-45'}`} />
+                        </div>
+                        {openJabatan && (
+                          <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
+                            {jabatanList.map(jabatan => (
+                              <div
+                                key={jabatan.id_jabatan_struktural}
+                                onClick={() => {
+                                  setFormData({ ...formData, id_jabatan_struktural: jabatan.id_jabatan_struktural });
+                                  setOpenJabatan(false);
+                                }}
+                                className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
+                              >
+                                {jabatan.nama_jabatan}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <Input
+                        label="Pendidikan Terakhir"
+                        value={formData.pendidikan_terakhir}
+                        onChange={(e) => setFormData({ ...formData, pendidikan_terakhir: e.target.value })}
+                        placeholder="Contoh: S2 Teknik Informatika"
+                      />
                     </div>
                   </div>
-                  <div>
-                    <label className="text-xs font-bold uppercase tracking-widest text-slate-600 mb-2 block">Jabatan Struktural</label>
-                    <div className="relative">
-                      <div
-                        onClick={() => setOpenJabatan(!openJabatan)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 px-4 text-[0.9rem] text-slate-800 cursor-pointer flex justify-between items-center transition-all hover:border-violet-300"
-                      >
-                        <span className="truncate">{formData.id_jabatan_struktural ? jabatanList.find(j => j.id_jabatan_struktural == formData.id_jabatan_struktural)?.nama_jabatan : 'Pilih Jabatan Struktural'}</span>
-                        <Plus size={18} className={`text-slate-400 shrink-0 transition-transform duration-300 ${openJabatan ? 'rotate-0' : 'rotate-45'}`} />
-                      </div>
-                      {openJabatan && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-[100] max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-200 custom-scrollbar">
-                          {jabatanList.map(jabatan => (
-                            <div
-                              key={jabatan.id_jabatan_struktural}
-                              onClick={() => {
-                                setFormData({ ...formData, id_jabatan_struktural: jabatan.id_jabatan_struktural });
-                                setOpenJabatan(false);
-                              }}
-                              className="px-4 py-2.5 hover:bg-violet-50 hover:text-violet-700 transition cursor-pointer text-[0.875rem] font-medium border-b border-slate-100 last:border-0"
-                            >
-                              {jabatan.nama_jabatan}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                  <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
+                    <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
+                    <Button type="submit">{editingId ? 'Update Pegawai' : 'Simpan Pegawai'}</Button>
                   </div>
-                  <div>
-                    <Input
-                      label="Pendidikan Terakhir"
-                      value={formData.pendidikan_terakhir}
-                      onChange={(e) => setFormData({ ...formData, pendidikan_terakhir: e.target.value })}
-                      placeholder="Contoh: S2 Teknik Informatika"
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100">
-                  <Button type="button" variant="ghost" onClick={resetForm}>Batal</Button>
-                  <Button type="submit">{editingId ? 'Update Pegawai' : 'Simpan Pegawai'}</Button>
-                </div>
-              </form>
-            </Card>
+                </form>
+              </Card>
+            </div>
           </div>
         )}
 
