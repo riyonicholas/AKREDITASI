@@ -105,8 +105,8 @@ const controller1b = {
             // Isi Data
             data.forEach((item) => {
                 worksheet.addRow([
-                    item.jenis_unit, // <--- Sekarang ambil langsung dari database (PT/UPPS)
-                    item.nama_unit,
+                    item.unit_spmi,
+                    item.nama_unit_spmi,
                     item.dokumen_spmi,
                     item.jumlah_auditor,
                     item.auditor_certified,
